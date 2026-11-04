@@ -9,6 +9,7 @@ import {
    groupVersions,
    isStringEnum,
    type OpenAPIDocument,
+   parseClientVersion,
 } from '../scripts/lib/codegen';
 
 type AreaVersion = Parameters<typeof groupVersions>[1]['areas'][string]['versions'][string];
@@ -204,5 +205,19 @@ describe('getOperationsSource', () => {
             `      "POST /b": ["7.1",0],\n` +
             `   },\n};\n`,
       );
+   });
+});
+
+describe('parseClientVersion', () => {
+   it('returns the version of a package.json', () => {
+      const version = parseClientVersion({ name: '@hypothesi/azure-devops-api', version: '1.2.3' });
+
+      expect(version).toBe('1.2.3');
+   });
+
+   it.each([[null], [{}], [{ version: 1 }], [{ version: '' }]])('throws for %j', (packageJSON) => {
+      expect(() => {
+         return parseClientVersion(packageJSON);
+      }).toThrow('has no version');
    });
 });

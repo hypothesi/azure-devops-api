@@ -200,3 +200,17 @@ export function getOperationsSource(apiVersion: string, table: OperationTable): 
       `   },\n};\n`
    );
 }
+
+/** Reads the `version` of a parsed package.json. Throws when it is missing or not a string. */
+export function parseClientVersion(packageJSON: unknown): string {
+   const version =
+      typeof packageJSON === 'object' && packageJSON !== null && 'version' in packageJSON
+         ? packageJSON.version
+         : undefined;
+
+   if (typeof version !== 'string' || version === '') {
+      throw new Error('packages/client/package.json has no version');
+   }
+
+   return version;
+}

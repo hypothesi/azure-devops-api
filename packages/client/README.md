@@ -301,21 +301,45 @@ Generated POST operations are not retried after a timeout or a 5xx response.
 When Azure DevOps sends `Retry-After`, the client waits that long before its next request,
 even when the header arrives on a successful response.
 
-## Compatibility data
+## Supported versions
 
-`@hypothesi/azure-devops-api/compatibility` exports the API versions and products from the
-manifest of `@hypothesi/azure-devops-openapi`:
+`getCompatibility()` describes what this client version supports. It is exported from the
+package root and from `@hypothesi/azure-devops-api/compatibility`. Every API version,
+product, and entry point has an `id` for code and a `label` for UI text.
 
 ```ts
-import { apiVersions, products, specSnapshot } from '@hypothesi/azure-devops-api/compatibility';
+import { getCompatibility, getEntryPoint, isSupportedApiVersion } from '@hypothesi/azure-devops-api';
 
-console.log(products['server-2022'].highestApiVersion); // '7.0'
-console.log(apiVersions['7.1'].products); // ['services', 'server']
-console.log(specSnapshot); // 'swh:1:dir:eb5a1ee87e2a2fe00bd29c737b8f12aa68693ac3'
+const compatibility = getCompatibility();
+
+compatibility.clientVersion; // '0.1.0'
+compatibility.apiVersions.map((version) => version.id); // ['7.0', '7.1']
+compatibility.apiVersions.map((version) => version.label); // ['Azure DevOps REST API 7.0', 'Azure DevOps REST API 7.1']
+compatibility.products.map((product) => product.label); // ['Azure DevOps Services', 'Azure DevOps Server', 'Azure DevOps Server 2022']
+
+getEntryPoint('server-2022');
+// { id: 'server-2022', label: 'Azure DevOps Server 2022 (REST API 7.0)',
+//   importPath: '@hypothesi/azure-devops-api/server-2022', apiVersion: '7.0',
+//   products: ['services', 'server', 'server-2022'] }
+
+isSupportedApiVersion('7.2'); // false
 ```
 
-The `azureDevOps` field of `package.json` has the API versions and the snapshot too, so tools
-can read them without running code.
+| Export | Contents |
+| --- | --- |
+| `getCompatibility()` | `clientVersion`, `specSnapshot`, and the lists `apiVersions`, `products`, and `entryPoints` |
+| `getEntryPoint(id)` | the entry point for an API version or a product |
+| `SUPPORTED_API_VERSIONS` | `['7.0', '7.1']`, typed as `ApiVersion[]` |
+| `isSupportedApiVersion(value)` | a type guard for `ApiVersion`, for example for a version read from settings |
+| `isProductID(value)` | a type guard for `ProductID` |
+
+Each product lists `highestApiVersion`, the `source` of that value, and `verifiedOn`, which
+is `null` until someone tests the product against a real instance.
+
+`@hypothesi/azure-devops-api/compatibility` also exports the raw generated objects
+`apiVersions`, `products`, `clientVersion`, and `specSnapshot`. The `azureDevOps` field of
+`package.json` has the API versions and the snapshot, so tools can read them without running
+code.
 
 ## Development
 

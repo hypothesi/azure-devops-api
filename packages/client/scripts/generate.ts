@@ -6,7 +6,7 @@
  *   change is `identical` share the folder of the first version.
  * * `{apiVersion}/index.ts`: one namespace per area, from the right folder.
  * * `{apiVersion}/operations.ts`: the API version and server of every operation.
- * * `compatibility.ts`: the manifest's API versions and products.
+ * * `compatibility.ts`: the client version and the manifest's API versions and products.
  *
  * Run it with `npm run generate`. The output depends only on its input files.
  */
@@ -28,6 +28,7 @@ import {
    groupVersions,
    isStringEnum,
    type OpenAPIDocument,
+   parseClientVersion,
 } from './lib/codegen.ts';
 
 const PACKAGE_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'),
@@ -45,7 +46,7 @@ const manifest = ManifestSchema.parse(JSON.parse(await readFile(path.join(OPENAP
 await rm(OUTPUT_DIR, { recursive: true, force: true });
 await Promise.all(modules.map(generateArea));
 await Promise.all(apiVersions.map(writeVersion));
-await writeFile(path.join(OUTPUT_DIR, 'compatibility.ts'), getCompatibilitySource(manifest));
+await writeFile(path.join(OUTPUT_DIR, 'compatibility.ts'), getCompatibilitySource(manifest, await readClientVersion()));
 
 console.log(`Generated ${modules.length} area modules for API versions ${apiVersions.join(', ')} in ${OUTPUT_DIR}`);
 
@@ -155,13 +156,20 @@ function assertURLsInTable(operations: ReadonlyMap<string, unknown>): (module: A
    };
 }
 
-function getCompatibilitySource(data: Manifest): string {
+/** Changesets updates package.json, so the generated version always matches the release. */
+async function readClientVersion(): Promise<string> {
+   return parseClientVersion(JSON.parse(await readFile(path.join(PACKAGE_DIR, 'package.json'), 'utf8')));
+}
+
+function getCompatibilitySource(data: Manifest, clientVersion: string): string {
    const snapshot = data.source.specificationDirectory.startsWith('swh:')
       ? data.source.specificationDirectory
       : `swh:1:dir:${data.source.specificationDirectory}`;
 
    return (
       BANNER +
+      `/** The version of @hypothesi/azure-devops-api that this code was generated for. */\n` +
+      `export const clientVersion = ${JSON.stringify(clientVersion)};\n\n` +
       `/** The Software Heritage ID of the spec folder that the generated code comes from. */\n` +
       `export const specSnapshot = ${JSON.stringify(snapshot)};\n\n` +
       `/** Each supported API version and the products that accept it. */\n` +
