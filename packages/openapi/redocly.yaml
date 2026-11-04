@@ -1,0 +1,22 @@
+extends:
+   - recommended
+
+# Each rule below is turned off because the Microsoft source cannot satisfy it, and a fix would
+# have to invent content that Microsoft did not publish.
+rules:
+   # Operations have a description and no summary.
+   operation-summary: off
+   # Operation IDs such as "Artifact Link Types_List" contain spaces. They are Microsoft's
+   # names, and spaces are valid in an operationId.
+   operation-operationId-url-safe: off
+   # Tags have only a name.
+   tag-description: off
+   # No operation documents its error responses.
+   operation-4xx-response: off
+   # Every area defines models that no operation uses. They are part of Microsoft's model set,
+   # so they stay in the published files.
+   no-unused-components: off
+   # Azure DevOps serves both paths in each reported pair, for example
+   # /{project}/{team}/_apis/work/iterations/{iterationId}/workitemsorder and
+   # /{project}/{team}/_apis/work/iterations/chartimages/{name}.
+   no-ambiguous-paths: off

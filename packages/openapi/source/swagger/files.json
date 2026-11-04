@@ -1,0 +1,394 @@
+[
+   {
+      "path": "7.0/account/accounts.json",
+      "sha1Git": "e6750fadac63e01d3c956440a09c6eff115eead3"
+   },
+   {
+      "path": "7.0/approvalsAndChecks/pipelinePermissions.json",
+      "sha1Git": "e37bbbdbbca74c6fd884946ec5d45b177ef3e444"
+   },
+   {
+      "path": "7.0/approvalsAndChecks/pipelinesapproval.json",
+      "sha1Git": "6d762446ded3fafc2549c0f5d770de754c1532d3"
+   },
+   {
+      "path": "7.0/approvalsAndChecks/pipelinesChecks.json",
+      "sha1Git": "3979bac5c012a10f5d0c307a68211c5a6ebcc32c"
+   },
+   {
+      "path": "7.0/artifacts/feed.json",
+      "sha1Git": "b10a0445745ccda0f17c1501f106c120367ae41c"
+   },
+   {
+      "path": "7.0/artifacts/provenance.json",
+      "sha1Git": "3a9cbe780459a17b4b7ddd267f842b23672f6d94"
+   },
+   {
+      "path": "7.0/artifacts/sbom.json",
+      "sha1Git": "15c9537dcd4393dcbeb0ae6bbb4128a7ee4421b5"
+   },
+   {
+      "path": "7.0/artifactsPackageTypes/maven.json",
+      "sha1Git": "c32dbd056ed73b2cbb7655ac0ff1d14d26e70efd"
+   },
+   {
+      "path": "7.0/artifactsPackageTypes/npm.json",
+      "sha1Git": "c94290eda574679ef4a41eb21ff461362b11b1c8"
+   },
+   {
+      "path": "7.0/artifactsPackageTypes/nuGet.json",
+      "sha1Git": "7173ba4b5faf2b7800877b5d91bcb74cab7f8e92"
+   },
+   {
+      "path": "7.0/artifactsPackageTypes/pyPiApi.json",
+      "sha1Git": "3a9899636e5250aee65b4d2185890c585f697e60"
+   },
+   {
+      "path": "7.0/artifactsPackageTypes/universal.json",
+      "sha1Git": "ca87799781d1b8d360491ca69f2e859d685743ef"
+   },
+   {
+      "path": "7.0/audit/audit.json",
+      "sha1Git": "70dbabfae4243994d7aa95be743ae8f941f197e2"
+   },
+   {
+      "path": "7.0/build/build.json",
+      "sha1Git": "d31cc20b1afccb9ce18a9d9493923f28b279e042"
+   },
+   {
+      "path": "7.0/core/core.json",
+      "sha1Git": "907eee6a94ce047d381a6f9062992d52a99a6d3f"
+   },
+   {
+      "path": "7.0/dashboard/dashboard.json",
+      "sha1Git": "ef1310c3b7eb6f9cc1c08fcd23e57c7c4da9ec96"
+   },
+   {
+      "path": "7.0/distributedTask/elastic.json",
+      "sha1Git": "baed5a9a206e8247c6f6485b79103b3a5b29c46b"
+   },
+   {
+      "path": "7.0/distributedTask/taskAgent.json",
+      "sha1Git": "0a99164e5bf73ad9a2ebd8566c3d624e5f408a8e"
+   },
+   {
+      "path": "7.0/extensionManagement/extensionManagement.json",
+      "sha1Git": "c66147ca7732e7444b5e2905d91764fd7bff0320"
+   },
+   {
+      "path": "7.0/git/git.json",
+      "sha1Git": "e2ceea1748bdbb6cb00df4c39df8b7b272324e32"
+   },
+   {
+      "path": "7.0/graph/graph.json",
+      "sha1Git": "68cf4331cf8677aa6e31c787e4177377e2f62de6"
+   },
+   {
+      "path": "7.0/hooks/serviceHooks.json",
+      "sha1Git": "71ebc698d0e198ebb5d798156084aab27de24d1a"
+   },
+   {
+      "path": "7.0/ims/identities.json",
+      "sha1Git": "419bb530312e6b00b1320924aa06981f70b88537"
+   },
+   {
+      "path": "7.0/memberEntitlementManagement/memberEntitlementManagement.json",
+      "sha1Git": "a9a7a55164d621e628a5bf5ea48a505a5bd1d596"
+   },
+   {
+      "path": "7.0/notification/notification.json",
+      "sha1Git": "7c021869e09461ccf78dda8fb39147722e097e2d"
+   },
+   {
+      "path": "7.0/operations/operations.json",
+      "sha1Git": "5c8e2e306181e2a48b9b9ef8d68c08d0af83642a"
+   },
+   {
+      "path": "7.0/permissionsReport/permissionsReport.json",
+      "sha1Git": "5ab4f19388adfd6253bfb983c32156ce885c46f7"
+   },
+   {
+      "path": "7.0/pipelines/pipelines.json",
+      "sha1Git": "f910a4668cf3107bc0aa8cf141023b6cbc370992"
+   },
+   {
+      "path": "7.0/policy/policy.json",
+      "sha1Git": "0a83e632f5a0652fda8afa6ddbc5a360915cf7c9"
+   },
+   {
+      "path": "7.0/processadmin/workItemTrackingProcessTemplate.json",
+      "sha1Git": "93d110da2c6ab9dcce7049d7445d83821ee66ae5"
+   },
+   {
+      "path": "7.0/processes/workItemTrackingProcess.json",
+      "sha1Git": "abbfb3ddab91bd0eef10c34e9b2ec005a9bf149a"
+   },
+   {
+      "path": "7.0/profile/profile.json",
+      "sha1Git": "21241ce5d225620259a40d408c9f86f0e5e17bb2"
+   },
+   {
+      "path": "7.0/release/release.json",
+      "sha1Git": "fd55dd2751e7f58884d20db9d0c72f77e991ea7f"
+   },
+   {
+      "path": "7.0/search/search.json",
+      "sha1Git": "ebcf69a34ed961e67a4e99b3ce868dc4eb6ce792"
+   },
+   {
+      "path": "7.0/security/security.json",
+      "sha1Git": "00be350bf5f0d04ea0784c99c737692ff0bc8efd"
+   },
+   {
+      "path": "7.0/securityRoles/securityRoles.json",
+      "sha1Git": "a1ab23bf2d784121fa7035c19e0686c2fff80383"
+   },
+   {
+      "path": "7.0/serviceEndpoint/serviceEndpoint.json",
+      "sha1Git": "7dcba4459b244404f461444b64f2216dc51ba93c"
+   },
+   {
+      "path": "7.0/status/status.json",
+      "sha1Git": "c59e76d8454b39b59d185af11eabdd7526106373"
+   },
+   {
+      "path": "7.0/symbol/symbol.json",
+      "sha1Git": "a7c8e307937beefd8ca5397d40b88592de31cf62"
+   },
+   {
+      "path": "7.0/test/test.json",
+      "sha1Git": "bc57e5905098dfbb8b7aa1912e591e07bd1517a8"
+   },
+   {
+      "path": "7.0/testPlan/testPlan.json",
+      "sha1Git": "ba897394e1cb91df890707026cbffcf7cbabc2e2"
+   },
+   {
+      "path": "7.0/testResults/testResults.json",
+      "sha1Git": "c13e45e99fee09dd8d1236bbaff981604effb79c"
+   },
+   {
+      "path": "7.0/tfvc/tfvc.json",
+      "sha1Git": "0001cf4b02d6f8c1fe9469229b20042174fec5e7"
+   },
+   {
+      "path": "7.0/tokenAdmin/tokenAdmin.json",
+      "sha1Git": "acd26dcb6ab006c38a5510ae83f9b6e0fba6456a"
+   },
+   {
+      "path": "7.0/tokens/tokens.json",
+      "sha1Git": "98af2686244fc0a896300ca14ba48fdbb5bfc1a6"
+   },
+   {
+      "path": "7.0/wiki/wiki.json",
+      "sha1Git": "d5d846a6651df4aff98108f92a9dc3a1097f8c96"
+   },
+   {
+      "path": "7.0/wit/workItemTracking.json",
+      "sha1Git": "8a4c3896de235853f3f4a22f897779e84d6fbbab"
+   },
+   {
+      "path": "7.0/work/work.json",
+      "sha1Git": "222e327c524b7bf788a791d52cb23304a7d58186"
+   },
+   {
+      "path": "7.1/account/accounts.json",
+      "sha1Git": "8c8f3c33d77ade3a6046c81690099029aeed8857"
+   },
+   {
+      "path": "7.1/approvalsAndChecks/pipelinePermissions.json",
+      "sha1Git": "eceab646a8ca2e613c46f2c85d0fe2f85e9048ed"
+   },
+   {
+      "path": "7.1/approvalsAndChecks/pipelinesapproval.json",
+      "sha1Git": "7f4c358f6b39c386bd558e7cb625e469fba77994"
+   },
+   {
+      "path": "7.1/approvalsAndChecks/pipelinesChecks.json",
+      "sha1Git": "e5411050114d59c98d541017e29482d4789a0ac7"
+   },
+   {
+      "path": "7.1/artifacts/feed.json",
+      "sha1Git": "587fdba5ff1ac37bce807fec9c79d36708d1e300"
+   },
+   {
+      "path": "7.1/artifacts/provenance.json",
+      "sha1Git": "5d3072c4a8ed3eb31ae9a3709e3598be53484e7f"
+   },
+   {
+      "path": "7.1/artifacts/sbom.json",
+      "sha1Git": "87ee1a9b0c3139fcebf53c37a93a82871dbbfcbc"
+   },
+   {
+      "path": "7.1/artifactsPackageTypes/maven.json",
+      "sha1Git": "14f0dd11f1e097c20d53e0e21a2d43d492ed5357"
+   },
+   {
+      "path": "7.1/artifactsPackageTypes/npm.json",
+      "sha1Git": "3a9f6da0c160bd7092ab64bf7f88416332070c1f"
+   },
+   {
+      "path": "7.1/artifactsPackageTypes/nuGet.json",
+      "sha1Git": "7fa50ad68ce4e200b69f09eed476efb059366dd5"
+   },
+   {
+      "path": "7.1/artifactsPackageTypes/pyPiApi.json",
+      "sha1Git": "147dbfb040a36009a7f2df9f36b0a5cb43d40882"
+   },
+   {
+      "path": "7.1/artifactsPackageTypes/universal.json",
+      "sha1Git": "bb83595556a41d943c58c086633afe6c1dbc22cc"
+   },
+   {
+      "path": "7.1/audit/audit.json",
+      "sha1Git": "5905c43f4b9113df501615ec9a6e1c08b4e150fd"
+   },
+   {
+      "path": "7.1/build/build.json",
+      "sha1Git": "535e999e2d9a439ddcf83be15edbf3aa50b6c561"
+   },
+   {
+      "path": "7.1/core/core.json",
+      "sha1Git": "c677f5d4d1a440bd24df994178ab929caf4a9ebd"
+   },
+   {
+      "path": "7.1/dashboard/dashboard.json",
+      "sha1Git": "46841389da782ff2b73be37627678ba49cb10afc"
+   },
+   {
+      "path": "7.1/distributedTask/elastic.json",
+      "sha1Git": "7a9bcb1d7f42f3b6203d8d4c50d809a0f9b544e5"
+   },
+   {
+      "path": "7.1/distributedTask/task.json",
+      "sha1Git": "522bc9570a998dff8d3dde5e9397fdf9ef2857a3"
+   },
+   {
+      "path": "7.1/distributedTask/taskAgent.json",
+      "sha1Git": "64b9fcd7116c5bb3e60a98020a0482fc83879d5a"
+   },
+   {
+      "path": "7.1/extensionManagement/extensionManagement.json",
+      "sha1Git": "74124f6e4dfb63680005686e226ca256e803970a"
+   },
+   {
+      "path": "7.1/favorite/favorite.json",
+      "sha1Git": "3f43925983a352f628698ac5481f444cf17f5e73"
+   },
+   {
+      "path": "7.1/git/git.json",
+      "sha1Git": "2daed662633fc64a0bfd0e7389485f0dab55f305"
+   },
+   {
+      "path": "7.1/graph/graph.json",
+      "sha1Git": "5efa63f83c417d8abd9fda3d027da3ccf48b364d"
+   },
+   {
+      "path": "7.1/hooks/serviceHooks.json",
+      "sha1Git": "48433eabfdf8b4dd44b78ac9ece381effc902f90"
+   },
+   {
+      "path": "7.1/ims/identities.json",
+      "sha1Git": "d05d6c232ee2fc9aebe4ae5b778e311f5c16259a"
+   },
+   {
+      "path": "7.1/memberEntitlementManagement/memberEntitlementManagement.json",
+      "sha1Git": "174b2a203cefa53820c2ca769b5e07b2ff8fc6eb"
+   },
+   {
+      "path": "7.1/notification/notification.json",
+      "sha1Git": "803c1a8fe77b0b0954033039a7c9283eec55b6ca"
+   },
+   {
+      "path": "7.1/operations/operations.json",
+      "sha1Git": "e1b95ea9c6db637a093fae2e2047437c964ae10d"
+   },
+   {
+      "path": "7.1/permissionsReport/permissionsReport.json",
+      "sha1Git": "af39e4faa02669d41b13a70e5a0d1be8a657df8e"
+   },
+   {
+      "path": "7.1/pipelines/pipelines.json",
+      "sha1Git": "eddcc056b3e5f8886a3bfd313e573bb5de9acbf5"
+   },
+   {
+      "path": "7.1/policy/policy.json",
+      "sha1Git": "a7889097775296f2cfc948227c0e242877c50f1d"
+   },
+   {
+      "path": "7.1/processadmin/workItemTrackingProcessTemplate.json",
+      "sha1Git": "b11265e2bb8a0d260b3ba80bccfc780b45149070"
+   },
+   {
+      "path": "7.1/processes/workItemTrackingProcess.json",
+      "sha1Git": "91a023d83c18844e1e0b078dbb870b8a8e072f0a"
+   },
+   {
+      "path": "7.1/profile/profile.json",
+      "sha1Git": "9728d28b0704c26ee96a04425f239955a919e0d9"
+   },
+   {
+      "path": "7.1/release/release.json",
+      "sha1Git": "b2cddf6d2cff225d889dea753b4a080832733bca"
+   },
+   {
+      "path": "7.1/search/search.json",
+      "sha1Git": "8d5835ad5218dae1e5b22b3a10486ea0e34bb4bd"
+   },
+   {
+      "path": "7.1/security/security.json",
+      "sha1Git": "87ebe362eee37c496703ce90f8418deb7158339f"
+   },
+   {
+      "path": "7.1/securityRoles/securityRoles.json",
+      "sha1Git": "16f3cec8768e3edd340800c42daef4fc7d9d4023"
+   },
+   {
+      "path": "7.1/serviceEndpoint/serviceEndpoint.json",
+      "sha1Git": "c25115e4c21b18aa7c2720c7d3b30e88d852a75f"
+   },
+   {
+      "path": "7.1/status/status.json",
+      "sha1Git": "52314696720c1ec5a4c3a3c376ec5591f1d09620"
+   },
+   {
+      "path": "7.1/symbol/symbol.json",
+      "sha1Git": "2a1ad3151bad567e3226e0565604f7228e9784ed"
+   },
+   {
+      "path": "7.1/test/test.json",
+      "sha1Git": "affc95b52f201bc609f8e6004b51001804735400"
+   },
+   {
+      "path": "7.1/testPlan/testPlan.json",
+      "sha1Git": "2a0f24bb54f1c9a6e81a556b1fda7dd0c18f111d"
+   },
+   {
+      "path": "7.1/testResults/testResults.json",
+      "sha1Git": "034b6d1e50da83bd3eddfc1e488d33f5b32be915"
+   },
+   {
+      "path": "7.1/tfvc/tfvc.json",
+      "sha1Git": "86cbfb4c6bfebc74204ad26b5918fb872774a276"
+   },
+   {
+      "path": "7.1/tokenAdmin/tokenAdmin.json",
+      "sha1Git": "e074d8462ac8f3cedccd6ecd930431a3b804e0d9"
+   },
+   {
+      "path": "7.1/tokens/tokens.json",
+      "sha1Git": "2b3eb929c6d20510141a6fa91f8dcacc0ff64093"
+   },
+   {
+      "path": "7.1/wiki/wiki.json",
+      "sha1Git": "7aba6fa47f7fa56cbce69356efe357ecc32c50ca"
+   },
+   {
+      "path": "7.1/wit/workItemTracking.json",
+      "sha1Git": "5e85b5e62f84785ded34f9f15cb759bc68d9eab4"
+   },
+   {
+      "path": "7.1/work/work.json",
+      "sha1Git": "cbe3af39bf8dbdcfa28d19dc1b74d917179ed6e1"
+   }
+]

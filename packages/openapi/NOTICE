@@ -1,0 +1,32 @@
+@hypothesi/azure-devops-openapi
+
+The files in dist/openapi are converted from the Azure DevOps REST API specifications in
+https://github.com/MicrosoftDocs/vsts-rest-api-specs, as archived by Software Heritage
+(see source/SOURCE.md in the repository). The conversion changes the format and the
+layout. It does not change the API descriptions that Microsoft wrote.
+
+The info.license field of each specification is "MICROSOFT SOFTWARE LICENSE TERMS"
+(https://go.microsoft.com/fwlink/?LinkId=329770). That field is kept unchanged. The source
+repository itself is distributed under the following license:
+
+MIT License
+
+Copyright (c) 2018 Microsoft Docs
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

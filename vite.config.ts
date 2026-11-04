@@ -2,7 +2,7 @@ import { defineConfig } from 'vite-plus';
 
 export default defineConfig({
    lint: {
-      ignorePatterns: ['**/dist/**'],
+      ignorePatterns: ['**/dist/**', 'apps/docs/public/**', 'packages/client/src/generated/**'],
       plugins: ['typescript', 'unicorn', 'oxc'],
       categories: {
          correctness: 'error',
@@ -21,7 +21,15 @@ export default defineConfig({
       },
    },
    fmt: {
-      ignorePatterns: ['**/dist/**', 'package-lock.json', '**/*.md'],
+      // packages/openapi/source must stay byte-identical to the Software Heritage snapshot.
+      ignorePatterns: [
+         '**/dist/**',
+         'apps/docs/public/**',
+         'package-lock.json',
+         '**/*.md',
+         'packages/openapi/source/**',
+         'packages/client/src/generated/**',
+      ],
       printWidth: 120,
       tabWidth: 3,
       singleQuote: true,
