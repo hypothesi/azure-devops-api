@@ -91,12 +91,37 @@ Subpath exports:
 | `./server-2022` | the same module as `./7.0` |
 | `./compatibility` | the manifest's API versions and products, as typed data |
 
-Every generated function is version-independent. Each entry point builds a table from
-`${method} ${urlTemplate}` to `x-ado-api-version` for its API version, and the request
-adapter adds `api-version` from that table. Two API versions share one generated area
+Every generated function is version-independent. Each entry point has a table from
+`${method} ${urlTemplate}` to `[apiVersion, serverIndex]` for its API version.
+`src/core/request.ts` adds `api-version` from that table and sends the request to the
+operation's host, such as `feeds.dev.azure.com`. Two API versions share one generated area
 module when the manifest marks the area `identical`.
+
+`scripts/generate.ts` writes `src/generated`, which git ignores. Its logic is in
+`scripts/lib/codegen.ts`, with tests in `test/codegen.test.ts`.
 
 ## `apps/docs`
 
 A Vite+ site that renders `dist/docs/{apiVersion}.json` with `@scalar/api-reference`, one
 source per API version. It also has a compatibility page built from `dist/manifest.json`.
+
+## Build order
+
+Each workspace defines its tasks in `run.tasks` in its `vite.config.ts`. The `dependsOn`
+entries name the upstream task, for example `@hypothesi/azure-devops-openapi#build`, so
+`vp run -r build` runs the spec package first, then the client, then the docs site. Vite+
+caches each task and restores its outputs when its inputs have not changed.
+
+## Code quality
+
+`npm run quality` runs `fallow`:
+
+* `fallow dead-code` reports unused files, exports, and dependencies.
+* `fallow architecture` checks the import rules in `.fallowrc.json`. The zones match the
+  folders above, and each zone may import only the zones listed in its rule.
+* `fallow dupes` reports duplicated code.
+* `fallow health` runs once per workspace with that workspace's coverage report, because
+  `--coverage` takes one path.
+
+`fallow` skips git-ignored files, so it does not analyze `src/generated`.
+`test/codegen.test.ts` checks that generated files import only from `src/core`.

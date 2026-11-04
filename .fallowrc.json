@@ -1,0 +1,89 @@
+{
+   "$schema": "./node_modules/fallow/schema.json",
+   "boundaries": {
+      "zones": [
+         {
+            "name": "openapi-manifest",
+            "patterns": ["packages/openapi/src/**"]
+         },
+         {
+            "name": "openapi-scripts",
+            "patterns": ["packages/openapi/scripts/**"]
+         },
+         {
+            "name": "openapi-tests",
+            "patterns": ["packages/openapi/test/**"]
+         },
+         {
+            "name": "client-core",
+            "patterns": ["packages/client/src/core/**"]
+         },
+         {
+            "name": "client-helpers",
+            "patterns": ["packages/client/src/helpers/**"]
+         },
+         {
+            "name": "client-entries",
+            "patterns": ["packages/client/src/entries/**"]
+         },
+         {
+            "name": "client-scripts",
+            "patterns": ["packages/client/scripts/**"]
+         },
+         {
+            "name": "client-tests",
+            "patterns": ["packages/client/test/**"]
+         },
+         {
+            "name": "docs",
+            "patterns": ["apps/docs/**"]
+         }
+      ],
+      "rules": [
+         {
+            "from": "openapi-manifest",
+            "allow": []
+         },
+         {
+            "from": "openapi-scripts",
+            "allow": ["openapi-manifest"]
+         },
+         {
+            "from": "openapi-tests",
+            "allow": ["openapi-manifest", "openapi-scripts"]
+         },
+         {
+            "from": "client-core",
+            "allow": []
+         },
+         {
+            "from": "client-helpers",
+            "allow": ["client-core"]
+         },
+         {
+            "from": "client-entries",
+            "allow": ["client-core", "client-helpers"]
+         },
+         {
+            "from": "client-scripts",
+            "allow": ["openapi-manifest"]
+         },
+         {
+            "from": "client-tests",
+            "allow": ["client-core", "client-helpers", "client-entries", "client-scripts"]
+         },
+         {
+            "from": "docs",
+            "allow": ["openapi-manifest"],
+            "allowTypeOnly": ["client-entries"]
+         }
+      ],
+      "coverage": {
+         "requireAllFiles": true,
+         "allowUnmatched": ["**/*.config.ts"]
+      }
+   },
+   "publicPackages": ["@hypothesi/azure-devops-api", "@hypothesi/azure-devops-openapi"],
+   "ignoreDependencies": ["@arethetypeswrong/core", "publint"],
+   "entry": ["apps/docs/src/reference.ts", "apps/docs/src/site.scss"]
+}
