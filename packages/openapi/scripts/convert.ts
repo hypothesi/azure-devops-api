@@ -111,7 +111,7 @@ function addTagGroups(document: JsonObject, areas: ReadonlyMap<string, JsonObjec
    return { ...document, 'x-tagGroups': tagGroups };
 }
 
-function main(): void {
+function assertNoOverlays(): void {
    const overlays = readdirSync(OVERLAYS_DIR, { recursive: true, encoding: 'utf8' }).filter((file) => {
       return file !== 'README.md';
    });
@@ -120,47 +120,65 @@ function main(): void {
    if (overlays.length > 0) {
       throw new Error(`overlays/ contains ${overlays.join(', ')}, but convert.ts cannot apply overlays yet`);
    }
+}
+
+/** Converts every area of an API version, sorted by area name. */
+function convertAreas(apiVersion: string): Map<string, JsonObject> {
+   const areas = new Map<string, JsonObject>();
+
+   for (const entry of readdirSync(path.join(SWAGGER_DIR, apiVersion), { withFileTypes: true })) {
+      if (entry.isDirectory()) {
+         areas.set(entry.name, convertArea(apiVersion, entry.name));
+      }
+   }
+
+   return new Map(
+      [...areas].toSorted(([a], [b]) => {
+         return a.localeCompare(b);
+      }),
+   );
+}
+
+function writeArea(apiVersion: string, area: string, document: JsonObject): void {
+   writeJson(path.join(DIST_DIR, 'openapi', apiVersion, `${area}.json`), document);
+   writeJson(
+      path.join(DIST_DIR, 'codegen', apiVersion, `${area}.json`),
+      markStreamsAsBinary(openObjectSchemas(removeApiVersionParameter(moveMsPathsIntoPaths(document)))),
+   );
+}
+
+/** Writes one document with every area of an API version, for the docs site. */
+function writeDocs(apiVersion: string, areas: ReadonlyMap<string, JsonObject>): void {
+   // mergeDocuments uses the first part's servers for the document, so areas on dev.azure.com go first.
+   const docsParts = [...areas]
+         .toSorted(([, a], [, b]) => {
+            return Number(!usesDefaultServer(a)) - Number(!usesDefaultServer(b));
+         })
+         .map(([area, document]) => {
+            // Areas reuse model names, so a plain suffix such as `DeploymentBuild` can be taken already.
+            return { suffix: `.${area}`, document: addArea(moveMsPathsIntoPaths(document), area) };
+         }),
+      docs = mergeDocuments(docsParts, `Azure DevOps REST API ${apiVersion}`);
+
+   writeJson(path.join(DIST_DIR, 'docs', `${apiVersion}.json`), addTagGroups(docs, areas));
+   console.log(`${apiVersion}: ${areas.size} areas, ${listOperations(docs).length} operations`);
+}
+
+function main(): void {
+   assertNoOverlays();
 
    for (const output of ['openapi', 'codegen', 'docs']) {
       rmSync(path.join(DIST_DIR, output), { recursive: true, force: true });
    }
 
    for (const apiVersion of API_VERSIONS) {
-      const areas = new Map<string, JsonObject>();
+      const areas = convertAreas(apiVersion);
 
-      for (const entry of readdirSync(path.join(SWAGGER_DIR, apiVersion), { withFileTypes: true })) {
-         if (entry.isDirectory()) {
-            areas.set(entry.name, convertArea(apiVersion, entry.name));
-         }
+      for (const [area, document] of areas) {
+         writeArea(apiVersion, area, document);
       }
 
-      const sorted = new Map(
-         [...areas].toSorted(([a], [b]) => {
-            return a.localeCompare(b);
-         }),
-      );
-
-      for (const [area, document] of sorted) {
-         writeJson(path.join(DIST_DIR, 'openapi', apiVersion, `${area}.json`), document);
-         writeJson(
-            path.join(DIST_DIR, 'codegen', apiVersion, `${area}.json`),
-            markStreamsAsBinary(openObjectSchemas(removeApiVersionParameter(moveMsPathsIntoPaths(document)))),
-         );
-      }
-
-      // mergeDocuments uses the first part's servers for the document, so areas on dev.azure.com go first.
-      const docsParts = [...sorted]
-            .toSorted(([, a], [, b]) => {
-               return Number(!usesDefaultServer(a)) - Number(!usesDefaultServer(b));
-            })
-            .map(([area, document]) => {
-               // Areas reuse model names, so a plain suffix such as `DeploymentBuild` can be taken already.
-               return { suffix: `.${area}`, document: addArea(moveMsPathsIntoPaths(document), area) };
-            }),
-         docs = mergeDocuments(docsParts, `Azure DevOps REST API ${apiVersion}`);
-
-      writeJson(path.join(DIST_DIR, 'docs', `${apiVersion}.json`), addTagGroups(docs, sorted));
-      console.log(`${apiVersion}: ${sorted.size} areas, ${listOperations(docs).length} operations`);
+      writeDocs(apiVersion, areas);
    }
 }
 

@@ -135,4 +135,100 @@ describe('mergeDocuments', () => {
          );
       }).toThrow(/two documents define get/);
    });
+
+   it('throws when security schemes with the same key differ and are not OAuth', () => {
+      const document = createDocument('npm', {}),
+         apiKey = { components: { securitySchemes: { oauth2: { type: 'apiKey', name: 'key', in: 'header' } } } };
+
+      expect(() => {
+         return mergeDocuments(
+            [
+               { suffix: 'A', document },
+               { suffix: 'B', document: { ...document, paths: {}, ...apiKey } },
+            ],
+            'A, B',
+         );
+      }).toThrow('Security scheme oauth2 differs between documents');
+   });
+
+   it('throws when OAuth flows with the same name have different URLs', () => {
+      const document = createDocument('npm', {}),
+         other = createDocument('maven', {});
+
+      other.components = {
+         securitySchemes: {
+            oauth2: {
+               type: 'oauth2',
+               flows: { authorizationCode: { authorizationUrl: 'https://b', tokenUrl: 'https://t', scopes: {} } },
+            },
+         },
+      };
+
+      expect(() => {
+         return mergeDocuments(
+            [
+               { suffix: 'Npm', document },
+               { suffix: 'Maven', document: other },
+            ],
+            'Npm, Maven',
+         );
+      }).toThrow('Security scheme oauth2 has different authorizationCode URLs');
+   });
+
+   it('adds an OAuth flow that only the second scheme has', () => {
+      const other = createDocument('maven', {}),
+         implicit = { authorizationUrl: 'https://a', scopes: { 'vso.maven': '' } };
+
+      other.components = { securitySchemes: { oauth2: { type: 'oauth2', flows: { implicit } } } };
+
+      const result = mergeDocuments(
+         [
+            { suffix: 'Npm', document: createDocument('npm', {}) },
+            { suffix: 'Maven', document: other },
+         ],
+         'Npm, Maven',
+      );
+
+      expect(result.components).toMatchObject({
+         securitySchemes: { oauth2: { flows: { authorizationCode: { scopes: { 'vso.npm': '' } }, implicit } } },
+      });
+   });
+
+   it('keeps the first tag with each name', () => {
+      const first = createDocument('npm', {}),
+         second = createDocument('maven', {});
+
+      first.tags = [{ name: 'Packages', description: 'first' }];
+      second.tags = [{ name: 'Packages', description: 'second' }, 'not a tag'];
+
+      const result = mergeDocuments(
+         [
+            { suffix: 'Npm', document: first },
+            { suffix: 'Maven', document: second },
+         ],
+         'Npm, Maven',
+      );
+
+      expect(result.tags).toEqual([{ name: 'Packages', description: 'first' }]);
+   });
+
+   it('throws when the top-level security differs', () => {
+      const document = createDocument('npm', {});
+
+      expect(() => {
+         return mergeDocuments(
+            [
+               { suffix: 'A', document },
+               { suffix: 'B', document: { ...document, security: [{ oauth2: [] }] } },
+            ],
+            'A, B',
+         );
+      }).toThrow('B: top-level security differs from the first document');
+   });
+
+   it('throws when there are no parts', () => {
+      expect(() => {
+         return mergeDocuments([], 'Nothing');
+      }).toThrow('Nothing to merge');
+   });
 });

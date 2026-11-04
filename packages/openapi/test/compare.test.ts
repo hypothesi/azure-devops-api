@@ -171,4 +171,83 @@ describe('compareAreas', () => {
          changes: ['operation GET /{project}/_apis/git/repositories: required parameter query includeHidden added'],
       });
    });
+
+   it('treats a property that is no longer required as breaking', () => {
+      const previous = modify((area) => {
+         getRepositorySchema(area).required = ['id'];
+      });
+
+      expect(compareAreas(previous, createArea())).toMatchObject({
+         change: 'breaking',
+         changes: ['schema GitRepository: property id is no longer required'],
+      });
+   });
+
+   it('treats an added or removed keyword as breaking', () => {
+      const current = modify((area) => {
+         getRepositorySchema(area).additionalProperties = false;
+      });
+
+      expect(compareAreas(createArea(), current)).toMatchObject({
+         change: 'breaking',
+         changes: ['schema GitRepository: additionalProperties added'],
+      });
+      expect(compareAreas(current, createArea())).toMatchObject({
+         change: 'breaking',
+         changes: ['schema GitRepository: additionalProperties removed'],
+      });
+   });
+
+   it('treats a removed enum value as breaking', () => {
+      const current = modify((area) => {
+         getRepositorySchema(area).properties = {
+            id: { type: 'string' },
+            status: { type: 'string', enum: ['active'] },
+         };
+      });
+
+      expect(compareAreas(createArea(), current)).toMatchObject({
+         change: 'breaking',
+         changes: ['schema GitRepository: property status enum value "disabled" removed'],
+      });
+   });
+
+   it('compares arrays of the same length item by item', () => {
+      const previous = modify((area) => {
+            getRepositorySchema(area).allOf = [{ type: 'object' }, { type: 'string' }];
+         }),
+         current = modify((area) => {
+            getRepositorySchema(area).allOf = [{ type: 'object' }, { type: 'number' }];
+         });
+
+      expect(compareAreas(previous, current)).toMatchObject({
+         change: 'breaking',
+         changes: ['schema GitRepository: allOf [1] type changed from "string" to "number"'],
+      });
+   });
+
+   it('treats an array of a different length as one change', () => {
+      const previous = modify((area) => {
+            getRepositorySchema(area).allOf = [{ type: 'object' }];
+         }),
+         current = modify((area) => {
+            getRepositorySchema(area).allOf = [{ type: 'object' }, { type: 'number' }];
+         });
+
+      expect(compareAreas(previous, current)).toMatchObject({
+         change: 'breaking',
+         changes: [
+            'schema GitRepository: allOf changed from [{"type":"object"}] to [{"type":"object"},{"type":"number"}]',
+         ],
+      });
+   });
+
+   it('reports nothing for identical areas', () => {
+      expect(compareAreas(createArea(), createArea())).toEqual({
+         change: 'identical',
+         addedOperations: [],
+         removedOperations: [],
+         changes: [],
+      });
+   });
 });

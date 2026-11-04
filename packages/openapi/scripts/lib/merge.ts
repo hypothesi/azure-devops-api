@@ -93,13 +93,29 @@ function renameComponents(document: JsonObject, renames: Map<string, string>): J
    return result;
 }
 
+function isOAuth2Scheme(value: JsonValue): value is JsonObject {
+   return isJsonObject(value) && value.type === 'oauth2';
+}
+
+/** Combines the scopes of two OAuth flows with the same name. Every other field must match. */
+function mergeFlowScopes(key: string, flowName: string, existing: JsonObject, flow: JsonObject): JsonObject {
+   const { scopes: _existingScopes, ...existingRest } = existing,
+      { scopes: _scopes, ...rest } = flow;
+
+   if (!isDeepStrictEqual(existingRest, rest)) {
+      throw new Error(`Security scheme ${key} has different ${flowName} URLs`);
+   }
+
+   return { ...getObject(flow, 'scopes'), ...getObject(existing, 'scopes') };
+}
+
 /** Merges two security schemes with the same key. OAuth scopes are combined. */
 function mergeSecurityScheme(key: string, a: JsonValue, b: JsonValue): JsonValue {
    if (isDeepStrictEqual(a, b)) {
       return a;
    }
 
-   if (!isJsonObject(a) || !isJsonObject(b) || a.type !== 'oauth2' || b.type !== 'oauth2') {
+   if (!isOAuth2Scheme(a) || !isOAuth2Scheme(b)) {
       throw new Error(`Security scheme ${key} differs between documents`);
    }
 
@@ -109,22 +125,11 @@ function mergeSecurityScheme(key: string, a: JsonValue, b: JsonValue): JsonValue
    for (const [flowName, flow] of Object.entries(getObject(b, 'flows'))) {
       const existing = flows[flowName];
 
-      if (!isJsonObject(existing) || !isJsonObject(flow)) {
+      if (isJsonObject(existing) && isJsonObject(flow)) {
+         existing.scopes = mergeFlowScopes(key, flowName, existing, flow);
+      } else {
          flows[flowName] = flow;
-         continue;
       }
-
-      const { scopes: existingScopes, ...existingRest } = existing,
-         { scopes, ...rest } = flow;
-
-      if (!isDeepStrictEqual(existingRest, rest)) {
-         throw new Error(`Security scheme ${key} has different ${flowName} URLs`);
-      }
-
-      existing.scopes = {
-         ...(isJsonObject(scopes) ? scopes : {}),
-         ...(isJsonObject(existingScopes) ? existingScopes : {}),
-      };
    }
 
    return result;
@@ -144,6 +149,46 @@ function mergePathItem(pathKey: string, existing: JsonValue | undefined, pathIte
    }
 
    return existing;
+}
+
+/** Adds the path items of `document` to `result`. */
+function mergePaths(result: JsonObject, document: JsonObject, hasOwnServers: boolean): void {
+   for (const section of PATH_SECTIONS) {
+      const target = getOrCreateObject(result, section);
+
+      for (const [pathKey, pathItem] of Object.entries(getObject(document, section))) {
+         if (!isJsonObject(pathItem)) {
+            continue;
+         }
+
+         const item: JsonObject = hasOwnServers ? { ...pathItem, servers: document.servers ?? [] } : pathItem;
+
+         target[pathKey] = mergePathItem(pathKey, target[pathKey], item);
+      }
+   }
+}
+
+/** Adds the components of `document` to `components`. Security schemes with one key are merged. */
+function mergeComponents(components: JsonObject, document: JsonObject): void {
+   for (const [section, values] of Object.entries(getObject(document, 'components'))) {
+      const target = getOrCreateObject(components, section);
+
+      for (const [key, value] of Object.entries(isJsonObject(values) ? values : {})) {
+         const existing = target[key];
+
+         target[key] =
+            section === SECURITY_SCHEMES && existing !== undefined ? mergeSecurityScheme(key, existing, value) : value;
+      }
+   }
+}
+
+/** Adds the tags of `document` to `tags`. The first tag with a name wins. */
+function mergeTags(tags: Map<string, JsonValue>, document: JsonObject): void {
+   for (const tag of Array.isArray(document.tags) ? document.tags : []) {
+      if (isJsonObject(tag) && typeof tag.name === 'string' && !tags.has(tag.name)) {
+         tags.set(tag.name, tag);
+      }
+   }
 }
 
 /**
@@ -179,38 +224,9 @@ export function mergeDocuments(parts: readonly DocumentPart[], title: string): J
          throw new Error(`${part.suffix}: top-level security differs from the first document`);
       }
 
-      for (const section of PATH_SECTIONS) {
-         const target = getOrCreateObject(result, section);
-
-         for (const [pathKey, pathItem] of Object.entries(getObject(document, section))) {
-            if (!isJsonObject(pathItem)) {
-               continue;
-            }
-
-            const item: JsonObject = hasOwnServers ? { ...pathItem, servers: document.servers ?? [] } : pathItem;
-
-            target[pathKey] = mergePathItem(pathKey, target[pathKey], item);
-         }
-      }
-
-      for (const [section, values] of Object.entries(getObject(document, 'components'))) {
-         const target = getOrCreateObject(components, section);
-
-         for (const [key, value] of Object.entries(isJsonObject(values) ? values : {})) {
-            const existing = target[key];
-
-            target[key] =
-               section === SECURITY_SCHEMES && existing !== undefined
-                  ? mergeSecurityScheme(key, existing, value)
-                  : value;
-         }
-      }
-
-      for (const tag of Array.isArray(document.tags) ? document.tags : []) {
-         if (isJsonObject(tag) && typeof tag.name === 'string' && !tags.has(tag.name)) {
-            tags.set(tag.name, tag);
-         }
-      }
+      mergePaths(result, document, hasOwnServers);
+      mergeComponents(components, document);
+      mergeTags(tags, document);
    });
 
    if (Object.keys(getObject(result, 'x-ms-paths')).length === 0) {

@@ -9,7 +9,7 @@ import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ManifestSchema } from '../src/manifest.ts';
-import type { AreaVersion, Manifest, Product } from '../src/manifest.ts';
+import type { AreaVersion, ChangeKind, Manifest, Product } from '../src/manifest.ts';
 import { compareAreas } from './lib/compare.ts';
 import { getObject, getString, parseJsonObject } from './lib/json.ts';
 import type { JsonObject } from './lib/json.ts';
@@ -77,9 +77,9 @@ function describeAreaVersion(apiVersion: string, area: string, previousApiVersio
    };
 }
 
-function main(): void {
-   const apiVersions = API_VERSIONS.toSorted(compareVersions),
-      areas: Manifest['areas'] = {};
+/** Describes every area in every API version. `apiVersions` must be sorted. */
+function describeAreas(apiVersions: readonly string[]): Manifest['areas'] {
+   const areas: Manifest['areas'] = {};
 
    apiVersions.forEach((apiVersion, index) => {
       const files = readdirSync(path.join(DIST_DIR, 'openapi', apiVersion)).toSorted();
@@ -96,50 +96,64 @@ function main(): void {
       }
    });
 
-   const manifest = ManifestSchema.parse({
-      source: {
-         repository: 'https://github.com/MicrosoftDocs/vsts-rest-api-specs',
-         license: 'MIT',
-         snapshot: `swh:1:snp:${SNAPSHOT.snapshot}`,
-         revision: `swh:1:rev:${SNAPSHOT.revision}`,
-         specificationDirectory: `swh:1:dir:${SNAPSHOT.specificationDirectory}`,
-      },
-      openapiVersion: '3.2.0',
-      apiVersions: Object.fromEntries(
-         apiVersions.map((apiVersion) => {
-            const products = Object.entries(PRODUCTS)
-               .filter(([, product]) => {
-                  return compareVersions(product.highestApiVersion, apiVersion) >= 0;
-               })
-               .map(([key]) => {
-                  return key;
-               });
+   return areas;
+}
 
-            return [apiVersion, { status: 'released', products }];
-         }),
-      ),
-      products: PRODUCTS,
-      areas: Object.fromEntries(
-         Object.entries(areas).toSorted(([a], [b]) => {
-            return a.localeCompare(b);
-         }),
-      ),
-   });
+function getProducts(apiVersion: string): string[] {
+   return Object.entries(PRODUCTS)
+      .filter(([, product]) => {
+         return compareVersions(product.highestApiVersion, apiVersion) >= 0;
+      })
+      .map(([key]) => {
+         return key;
+      });
+}
+
+/** Counts the areas of an API version by their change from the previous API version. */
+function countChanges(manifest: Manifest, apiVersion: string): Record<ChangeKind | 'new', number> {
+   const counts = { identical: 0, additive: 0, breaking: 0, new: 0 },
+      changes = Object.values(manifest.areas).flatMap(({ versions }): (ChangeKind | 'new')[] => {
+         const version = versions[apiVersion];
+
+         return version === undefined ? [] : [version.comparedToPrevious?.change ?? 'new'];
+      });
+
+   for (const change of changes) {
+      counts[change] += 1;
+   }
+
+   return counts;
+}
+
+function main(): void {
+   const apiVersions = API_VERSIONS.toSorted(compareVersions),
+      areas = describeAreas(apiVersions),
+      manifest = ManifestSchema.parse({
+         source: {
+            repository: 'https://github.com/MicrosoftDocs/vsts-rest-api-specs',
+            license: 'MIT',
+            snapshot: `swh:1:snp:${SNAPSHOT.snapshot}`,
+            revision: `swh:1:rev:${SNAPSHOT.revision}`,
+            specificationDirectory: `swh:1:dir:${SNAPSHOT.specificationDirectory}`,
+         },
+         openapiVersion: '3.2.0',
+         apiVersions: Object.fromEntries(
+            apiVersions.map((apiVersion) => {
+               return [apiVersion, { status: 'released', products: getProducts(apiVersion) }];
+            }),
+         ),
+         products: PRODUCTS,
+         areas: Object.fromEntries(
+            Object.entries(areas).toSorted(([a], [b]) => {
+               return a.localeCompare(b);
+            }),
+         ),
+      });
 
    writeFileSync(path.join(DIST_DIR, 'manifest.json'), `${JSON.stringify(manifest, null, 3)}\n`);
 
    for (const apiVersion of apiVersions.slice(1)) {
-      const counts = { identical: 0, additive: 0, breaking: 0, new: 0 };
-
-      for (const { versions } of Object.values(manifest.areas)) {
-         const version = versions[apiVersion];
-
-         if (version !== undefined) {
-            counts[version.comparedToPrevious?.change ?? 'new'] += 1;
-         }
-      }
-
-      console.log(`${apiVersion}: ${JSON.stringify(counts)}`);
+      console.log(`${apiVersion}: ${JSON.stringify(countChanges(manifest, apiVersion))}`);
    }
 }
 

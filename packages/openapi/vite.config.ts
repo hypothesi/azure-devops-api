@@ -1,6 +1,16 @@
 import { defineConfig } from 'vite-plus';
 
 export default defineConfig({
+   run: {
+      tasks: {
+         build: {
+            command:
+               'node scripts/convert.ts && node scripts/diff.ts && redocly lint --config redocly.yaml dist/openapi/*/*.json && vp pack',
+            // The task writes dist/, so that folder is an output, not an input.
+            cache: { input: [{ auto: true }, '!dist/**'] },
+         },
+      },
+   },
    pack: {
       entry: ['src/manifest.ts'],
       dts: true,
@@ -13,6 +23,8 @@ export default defineConfig({
       attw: { level: 'error', profile: 'node16' },
    },
    test: {
+      // `vp run coverage` writes coverage/coverage-final.json for `fallow health --coverage`.
+      coverage: { provider: 'v8', reporter: ['text', 'json'], reportsDirectory: 'coverage' },
       projects: [{ test: { name: 'node', include: ['test/**/*.test.ts'], environment: 'node' } }],
    },
 });

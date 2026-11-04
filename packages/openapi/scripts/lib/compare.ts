@@ -127,6 +127,29 @@ function isIgnored(key: string): boolean {
    return IGNORED_KEYS.has(key) || key.startsWith('x-');
 }
 
+/** Compares one key of two objects that are not maps. */
+function compareKey(
+   segments: readonly string[],
+   key: string,
+   before: JsonValue | undefined,
+   after: JsonValue | undefined,
+   changes: Changes,
+): void {
+   if (key === 'required' && isOptionalArray(before) && isOptionalArray(after)) {
+      compareSet(segments, key, before ?? [], after ?? [], changes);
+   } else if (before === undefined) {
+      changes.breaking.add(describe(segments, `${key} added`));
+   } else if (after === undefined) {
+      changes.breaking.add(describe(segments, `${key} removed`));
+   } else if (SET_KEYS.has(key) && Array.isArray(before) && Array.isArray(after)) {
+      compareSet(segments, key, before, after, changes);
+   } else if (MAP_KEYS.has(key) && isJsonObject(before) && isJsonObject(after)) {
+      compareMap(segments, key, before, after, changes);
+   } else {
+      compareNode([...segments, key], before, after, changes);
+   }
+}
+
 /** Compares two values of an object that is not a map. Any difference is breaking, unless a map or set rule says otherwise. */
 function compareNode(segments: readonly string[], a: JsonValue, b: JsonValue, changes: Changes): void {
    if (Array.isArray(a) && Array.isArray(b) && a.length === b.length) {
@@ -137,35 +160,18 @@ function compareNode(segments: readonly string[], a: JsonValue, b: JsonValue, ch
       return;
    }
 
-   if (!isJsonObject(a) || !isJsonObject(b)) {
-      if (JSON.stringify(a) !== JSON.stringify(b)) {
-         changes.breaking.add(describe(segments, `changed from ${JSON.stringify(a)} to ${JSON.stringify(b)}`));
+   if (isJsonObject(a) && isJsonObject(b)) {
+      for (const key of new Set([...Object.keys(a), ...Object.keys(b)])) {
+         if (!isIgnored(key)) {
+            compareKey(segments, key, a[key], b[key], changes);
+         }
       }
 
       return;
    }
 
-   for (const key of new Set([...Object.keys(a), ...Object.keys(b)])) {
-      const before = a[key],
-         after = b[key];
-
-      if (isIgnored(key)) {
-         continue;
-      }
-
-      if (key === 'required' && isOptionalArray(before) && isOptionalArray(after)) {
-         compareSet(segments, key, before ?? [], after ?? [], changes);
-      } else if (before === undefined) {
-         changes.breaking.add(describe(segments, `${key} added`));
-      } else if (after === undefined) {
-         changes.breaking.add(describe(segments, `${key} removed`));
-      } else if (SET_KEYS.has(key) && Array.isArray(before) && Array.isArray(after)) {
-         compareSet(segments, key, before, after, changes);
-      } else if (MAP_KEYS.has(key) && isJsonObject(before) && isJsonObject(after)) {
-         compareMap(segments, key, before, after, changes);
-      } else {
-         compareNode([...segments, key], before, after, changes);
-      }
+   if (JSON.stringify(a) !== JSON.stringify(b)) {
+      changes.breaking.add(describe(segments, `changed from ${JSON.stringify(a)} to ${JSON.stringify(b)}`));
    }
 }
 

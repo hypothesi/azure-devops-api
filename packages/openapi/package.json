@@ -41,7 +41,8 @@
       "./package.json": "./package.json"
    },
    "scripts": {
-      "build": "node scripts/convert.ts && node scripts/diff.ts && redocly lint --config redocly.yaml dist/openapi/*/*.json && vp pack",
+      "coverage": "vp test run --project node --coverage",
+      "fetch": "node scripts/fetch.ts",
       "test": "vp test run",
       "test:node": "vp test run --project node"
    },

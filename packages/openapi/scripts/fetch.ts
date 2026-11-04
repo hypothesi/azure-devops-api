@@ -15,27 +15,17 @@
  *
  * Usage: node scripts/fetch.ts
  */
-import { mkdirSync, readFileSync, existsSync, writeFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { getGitBlobHash } from './lib/git-blob.ts';
+import { assertDownloadedBlob, parseDirectoryListing, parseMirrorTree } from './lib/archive.ts';
+import type { DirectoryEntry, MirrorEntry } from './lib/archive.ts';
+import { hasGitBlob } from './lib/git-blob.ts';
 import { API_VERSIONS, SNAPSHOT } from './snapshot.ts';
-
-interface DirectoryEntry {
-   readonly name: string;
-   readonly type: 'dir' | 'file' | 'rev';
-   readonly target: string;
-}
 
 interface SourceFile {
    readonly path: string;
    readonly sha1Git: string;
-}
-
-interface MirrorEntry {
-   readonly path: string;
-   readonly type: string;
-   readonly sha: string;
 }
 
 const ARCHIVE_API = 'https://archive.softwareheritage.org/api/1',
@@ -90,41 +80,11 @@ async function request(url: string): Promise<Response> {
    return response;
 }
 
-function isDirectoryEntry(value: unknown): value is DirectoryEntry {
-   return (
-      typeof value === 'object' &&
-      value !== null &&
-      'name' in value &&
-      typeof value.name === 'string' &&
-      'type' in value &&
-      (value.type === 'dir' || value.type === 'file' || value.type === 'rev') &&
-      'target' in value &&
-      typeof value.target === 'string'
-   );
-}
-
 async function listDirectory(directoryID: string): Promise<DirectoryEntry[]> {
    const response = await request(`${ARCHIVE_API}/directory/${directoryID}/`),
-      entries: unknown = await response.json();
+      body: unknown = await response.json();
 
-   if (!Array.isArray(entries) || !entries.every(isDirectoryEntry)) {
-      throw new Error(`Directory ${directoryID}: unexpected response`);
-   }
-
-   return entries;
-}
-
-function isMirrorEntry(value: unknown): value is MirrorEntry {
-   return (
-      typeof value === 'object' &&
-      value !== null &&
-      'path' in value &&
-      typeof value.path === 'string' &&
-      'type' in value &&
-      typeof value.type === 'string' &&
-      'sha' in value &&
-      typeof value.sha === 'string'
-   );
+   return parseDirectoryListing(directoryID, body);
 }
 
 /** Every tree and blob under `specification` in the copy, keyed by path such as `wit/7.1`. */
@@ -134,37 +94,18 @@ async function listMirror(): Promise<Map<string, MirrorEntry>> {
       ),
       body: unknown = await response.json();
 
-   if (
-      !response.ok ||
-      typeof body !== 'object' ||
-      body === null ||
-      !('tree' in body) ||
-      !Array.isArray(body.tree) ||
-      !body.tree.every(isMirrorEntry) ||
-      ('truncated' in body && body.truncated === true)
-   ) {
-      throw new Error(`Listing the GitHub copy failed with HTTP ${response.status}`);
-   }
-
-   return new Map(
-      body.tree.map((entry) => {
-         return [entry.path, entry];
-      }),
-   );
+   return parseMirrorTree(response, body);
 }
 
 async function download(url: string, sha1Git: string, target: string): Promise<void> {
-   if (existsSync(target) && getGitBlobHash(readFileSync(target)) === sha1Git) {
+   if (hasGitBlob(target, sha1Git)) {
       return;
    }
 
    const response = url.startsWith(ARCHIVE_API) ? await request(url) : await fetch(url),
-      content = Buffer.from(await response.arrayBuffer()),
-      hash = getGitBlobHash(content);
+      content = Buffer.from(await response.arrayBuffer());
 
-   if (!response.ok || hash !== sha1Git) {
-      throw new Error(`${target}: expected git blob ${sha1Git}, got HTTP ${response.status} and ${hash}`);
-   }
+   assertDownloadedBlob(target, sha1Git, response, content);
 
    mkdirSync(path.dirname(target), { recursive: true });
    writeFileSync(target, content);
