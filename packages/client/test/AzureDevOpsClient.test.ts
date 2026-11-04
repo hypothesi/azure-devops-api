@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vite-plus/test';
 import { z } from 'zod';
-import { AzureDevOpsClient, type AzureDevOpsClientOptions, InvalidInputError } from '../src/index';
-import { createFakeClient, getRequest, respondJSON } from './fake-fetch';
+import { createClient as createClient70 } from '../src/entries/7.0';
+import { type AzureDevOpsClientOptions, createClient, InvalidInputError } from '../src/entries/7.1';
+import { createFakeClient, getRequest, respondJSON, PROJECT_ID } from './fake-fetch';
 
 const searchPage = respondJSON({ count: 0, results: [] });
 
@@ -15,10 +16,10 @@ async function getSearchURL(options: Partial<AzureDevOpsClientOptions>): Promise
    return url.origin + url.pathname;
 }
 
-describe('AzureDevOpsClient', () => {
+describe('createClient', () => {
    describe('organization', () => {
       it('turns an organization name into a dev.azure.com URL', async () => {
-         const { client, requests } = createFakeClient([respondJSON({ id: '1', name: 'Web' })]);
+         const { client, requests } = createFakeClient([respondJSON({ id: PROJECT_ID, name: 'Web' })]);
 
          await client.projects.get('Web');
 
@@ -26,10 +27,11 @@ describe('AzureDevOpsClient', () => {
       });
 
       it('accepts a full collection URL with a trailing slash', async () => {
-         const { client, requests } = createFakeClient([respondJSON({ id: '1', name: 'Web' })], {
-            organization: 'https://tfs.example.com/DefaultCollection/',
-            apiVersion: '7.0',
-         });
+         const { client, requests } = createFakeClient(
+            [respondJSON({ id: PROJECT_ID, name: 'Web' })],
+            { organization: 'https://tfs.example.com/DefaultCollection/' },
+            createClient70,
+         );
 
          await client.projects.get('My Project');
 
@@ -48,7 +50,7 @@ describe('AzureDevOpsClient', () => {
          ['a non-finite retry count', { retry: { maxRetries: Number.NaN } }],
       ] as const)('throws InvalidInputError for %s', (_name, options) => {
          expect(() => {
-            return new AzureDevOpsClient({
+            return createClient({
                organization: 'contoso',
                auth: { type: 'pat', token: 'secret' },
                ...options,

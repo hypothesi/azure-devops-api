@@ -3,6 +3,10 @@
 A typed client for the Azure DevOps REST API. It runs in browsers, Node.js, Deno, Bun, and
 any other runtime with `fetch`.
 
+* It has a function for every operation of every Azure DevOps REST API area, generated from
+  the OpenAPI files of `@hypothesi/azure-devops-openapi`.
+* Each API version has its own entry point. An operation that your server does not have is a
+  type error.
 * Every response is validated with [Zod 4](https://zod.dev). A response that does not match
   throws `ResponseValidationError` instead of returning bad data.
 * Every failure has its own error class: `AuthenticationError`, `NotFoundError`,
@@ -18,20 +22,48 @@ any other runtime with `fetch`.
 npm install @hypothesi/azure-devops-api zod
 ```
 
-`zod` is a peer dependency, so the schemas that this package exports work with your own Zod
-code.
+`zod` is a peer dependency. The client validates every response with Zod schemas that are
+generated from the specs.
+
+## Choose an entry point
+
+Each entry point has the operations of one Azure DevOps REST API version. Import the entry
+point of the oldest product that you must support. Every product also accepts all lower API
+versions, so the `7.0` entry point works with Azure DevOps Services too.
+
+| Product                              | Entry point                               | Same module as |
+| ------------------------------------ | ----------------------------------------- | -------------- |
+| Azure DevOps Services                | `@hypothesi/azure-devops-api/services`    | `./7.1`        |
+| Azure DevOps Server (newest release) | `@hypothesi/azure-devops-api/server`      | `./7.1`        |
+| Azure DevOps Server 2022             | `@hypothesi/azure-devops-api/server-2022` | `./7.0`        |
+
+An entry point does not export the operations that its API version does not have:
+
+```ts
+import { wit } from '@hypothesi/azure-devops-api/server-2022';
+
+// Type error: tempQueriesCreate is new in API version 7.1.
+await wit.tempQueriesCreate({ client: ado, path: { project: 'Web' }, body: { wiql } });
+```
+
+The package root, `@hypothesi/azure-devops-api`, exports only the error classes and the types
+that every entry point shares. Every entry point exports them too.
 
 ## Quick start
 
 ```ts
-import { AzureDevOpsClient } from '@hypothesi/azure-devops-api';
+import { createClient, wit } from '@hypothesi/azure-devops-api/services';
 
-const client = new AzureDevOpsClient({
+const ado = createClient({
    organization: 'contoso',
    auth: { type: 'pat', token: process.env.AZURE_DEVOPS_PAT ?? '' },
 });
 
-const workItem = await client.workItems.get(42);
+const { data: workItem } = await wit.workItemsGetWorkItem({
+   client: ado,
+   path: { project: 'Web', id: 42 },
+   query: { fields: 'System.Title,System.State' },
+});
 
 console.log(workItem.fields?.['System.Title']);
 ```
@@ -39,12 +71,46 @@ console.log(workItem.fields?.['System.Title']);
 `organization` accepts an organization name (`contoso`) or a full URL. Use a full URL for
 Azure DevOps Server, for example `https://tfs.example.com/DefaultCollection`.
 
+## Generated operations
+
+Each entry point exports one namespace per REST API area, such as `wit`, `core`, `git`,
+`work`, and `artifacts`. A namespace has a function for each operation and the TypeScript
+types of the area.
+
+Each function takes the client in `client`, the path parameters in `path`, the query
+parameters in `query`, and the request body in `body`. It resolves to `{ data, status,
+headers }`. On failure it throws one of the [errors](#errors).
+
+```ts
+import { core, createClient, git, wit } from '@hypothesi/azure-devops-api/7.1';
+
+const ado = createClient({ organization: 'contoso', auth: { type: 'pat', token: myPAT } });
+
+// The client sends the api-version of each operation. For this operation it is 7.1-preview.4.
+const { data: comment } = await wit.commentsGetComment({
+   client: ado,
+   path: { project: 'Web', workItemId: 42, commentId: 7 },
+});
+
+// A list operation resolves to the array. Some operations send a continuation token in a header.
+const { data: repositories } = await git.repositoriesList({ client: ado, path: { project: 'Web' } });
+const { data: projects, headers } = await core.projectsList({ client: ado, query: { $top: 100 } });
+const nextPage = headers.get('x-ms-continuationtoken');
+```
+
+The types of an area are in the same namespace, for example `wit.Comment` and
+`git.GitRepository`.
+
+Some areas have their own host on Azure DevOps Services, for example `artifacts` on
+`feeds.dev.azure.com`. The client sends their operations to that host. On Azure DevOps
+Server, every operation goes to the collection URL.
+
 ## Authentication
 
 A personal access token:
 
 ```ts
-const client = new AzureDevOpsClient({
+const ado = createClient({
    organization: 'contoso',
    auth: { type: 'pat', token: myPAT },
 });
@@ -60,7 +126,7 @@ import { DefaultAzureCredential } from '@azure/identity';
 const credential = new DefaultAzureCredential(),
    scope = '499b84ac-1321-427f-aa17-267ca6975798/.default';
 
-const client = new AzureDevOpsClient({
+const ado = createClient({
    organization: 'contoso',
    auth: {
       type: 'bearer',
@@ -74,20 +140,25 @@ const client = new AzureDevOpsClient({
 A PAT in browser code is readable by anyone who can open the page. In a browser, use a bearer
 token for the signed-in user.
 
-## Work items
+## Helpers
+
+The client also has helpers for common tasks. They build JSON Patch bodies, split long ID
+lists, and follow continuation tokens.
+
+### Work items
 
 ```ts
 // Get many work items. The client splits the IDs into requests of 200.
-const workItems = await client.workItems.list([1, 2, 3], { fields: ['System.Title', 'System.State'] });
+const workItems = await ado.workItems.list([1, 2, 3], { fields: ['System.Title', 'System.State'] });
 
 // Run a WIQL query and get the matching work items.
-const mine = await client.workItems.queryWorkItems(
+const mine = await ado.workItems.queryWorkItems(
    "SELECT [System.Id] FROM workitems WHERE [System.AssignedTo] = @Me AND [System.State] <> 'Closed'",
    { project: 'Web' },
 );
 
 // Create a bug with Markdown repro steps and a parent.
-const bug = await client.workItems.create({
+const bug = await ado.workItems.create({
    project: 'Web',
    type: 'Bug',
    fields: {
@@ -99,7 +170,7 @@ const bug = await client.workItems.create({
 });
 
 // Update it only if nobody changed it since revision 1.
-await client.workItems.update(bug.id, {
+await ado.workItems.update(42, {
    expectedRevision: 1,
    fields: { 'System.State': 'Active' },
 });
@@ -108,45 +179,56 @@ await client.workItems.update(bug.id, {
 Azure DevOps strips text that looks like an HTML tag from Markdown fields, even inside code
 spans. `<name>` is stored as an empty string. Write placeholders as `{name}`.
 
-### Attachments
+`addComment` and `updateComment` send `format=markdown` by default on API version 7.1. API
+version 7.0 has no `format` parameter for comments, so a 7.0 client sends none and throws
+`InvalidInputError` when you pass `format`.
+
+#### Attachments
 
 ```ts
 const file = new Blob([pngBytes], { type: 'image/png' }),
-   attachment = await client.workItems.uploadAttachment({ project: 'Web', fileName: 'screen.png', content: file });
+   attachment = await ado.workItems.uploadAttachment({ project: 'Web', fileName: 'screen.png', content: file });
 
-await client.workItems.update(bug.id, { relations: [{ rel: 'AttachedFile', url: attachment.url }] });
+await ado.workItems.update(42, { relations: [{ rel: 'AttachedFile', url: attachment.url ?? '' }] });
 ```
 
-## Paginated results
+### Iterations
 
-Methods that return many pages are async generators. They request the next page only when
+```ts
+const sprint = await ado.work.getCurrentIteration('Web', 'Web Team');
+```
+
+### Paginated results
+
+Helpers that return many pages are async generators. They request the next page only when
 the loop needs it:
 
 ```ts
-for await (const comment of client.workItems.listComments('Web', 42)) {
+for await (const comment of ado.workItems.listComments('Web', 42)) {
    console.log(comment.text);
 }
 
-const projects = await Array.fromAsync(client.projects.list());
-const results = await Array.fromAsync(client.workItems.search('login timeout', { project: 'Web' }));
+const projects = await Array.fromAsync(ado.projects.list());
+const results = await Array.fromAsync(ado.workItems.search('login timeout', { project: 'Web' }));
 ```
 
 ## Other endpoints
 
-`client.request()` calls any endpoint under the organization URL with the same auth, timeout,
-retry, and error handling. Pass a Zod schema for the response:
+`ado.request()` calls any endpoint under the organization URL with the same auth, timeout,
+retry, and error handling. It sends the API version of the entry point unless you pass
+`apiVersion`. Pass a Zod schema for the response:
 
 ```ts
 import { z } from 'zod';
 
-const { data } = await client.request({
+const { data } = await ado.request({
    path: ['Web', '_apis', 'git', 'repositories'],
    schema: z.object({ value: z.array(z.object({ id: z.string(), name: z.string() })) }),
 });
 ```
 
 The client percent-encodes each path segment. It sends credentials only to the organization
-URL and the search URL.
+URL, the search URL, and the hosts of the generated operations.
 
 ## Errors
 
@@ -170,11 +252,12 @@ signal's `reason`.
 `activityID` to Microsoft support to find the request in their logs.
 
 ```ts
-import { NotFoundError, type WorkItem } from '@hypothesi/azure-devops-api';
+import { NotFoundError } from '@hypothesi/azure-devops-api';
+import { wit } from '@hypothesi/azure-devops-api/services';
 
-async function findWorkItem(id: number): Promise<WorkItem | undefined> {
+async function findWorkItem(id: number): Promise<wit.WorkItem | undefined> {
    try {
-      return await client.workItems.get(id);
+      return (await wit.workItemsGetWorkItem({ client: ado, path: { project: 'Web', id } })).data;
    } catch (error) {
       if (error instanceof NotFoundError) {
          return undefined;
@@ -188,7 +271,7 @@ async function findWorkItem(id: number): Promise<WorkItem | undefined> {
 ## Timeouts and retries
 
 ```ts
-const client = new AzureDevOpsClient({
+const ado = createClient({
    organization: 'contoso',
    auth: { type: 'pat', token: myPAT },
    timeoutMs: 30_000, // per attempt, including the response body
@@ -198,8 +281,9 @@ const client = new AzureDevOpsClient({
    },
 });
 
-// Per call:
-await client.workItems.get(42, { timeoutMs: 5_000, signal: AbortSignal.timeout(20_000) });
+// Per call, for helpers and generated operations:
+await ado.workItems.get(42, { timeoutMs: 5_000, signal: AbortSignal.timeout(20_000) });
+await wit.workItemsGetWorkItem({ client: ado, path: { project: 'Web', id: 42 }, timeoutMs: 5_000 });
 ```
 
 | Failure                      | Safe to repeat: GET, PUT, DELETE, read-only POST, comment edits | Other POST and PATCH |
@@ -212,18 +296,45 @@ await client.workItems.get(42, { timeoutMs: 5_000, signal: AbortSignal.timeout(2
 A POST or PATCH can succeed on the server even when the response never arrives. A retry could
 then create a second work item or add a link twice, so the client does not retry them.
 `request()` takes `idempotent: true` to allow retries for a request that is safe to repeat.
+Generated POST operations are not retried after a timeout or a 5xx response.
 
 When Azure DevOps sends `Retry-After`, the client waits that long before its next request,
 even when the header arrives on a successful response.
+
+## Compatibility data
+
+`@hypothesi/azure-devops-api/compatibility` exports the API versions and products from the
+manifest of `@hypothesi/azure-devops-openapi`:
+
+```ts
+import { apiVersions, products, specSnapshot } from '@hypothesi/azure-devops-api/compatibility';
+
+console.log(products['server-2022'].highestApiVersion); // '7.0'
+console.log(apiVersions['7.1'].products); // ['services', 'server']
+console.log(specSnapshot); // 'swh:1:dir:eb5a1ee87e2a2fe00bd29c737b8f12aa68693ac3'
+```
+
+The `azureDevOps` field of `package.json` has the API versions and the snapshot too, so tools
+can read them without running code.
 
 ## Development
 
 ```sh
 npm install
 npx playwright install chromium firefox webkit
-npm run standards # format, lint, type check, build, and package export checks
-npm test          # every test in Node.js, Chromium, Firefox, and WebKit
+npm run generate  # build @hypothesi/azure-devops-openapi and write src/generated
+npm run standards # generate, format, lint, type check, build, and package export checks
+npm test          # generate, then run every test in Node.js, Chromium, Firefox, and WebKit
 ```
+
+`src/generated` is not in git. `scripts/generate.ts` writes it from the codegen files and the
+manifest of `@hypothesi/azure-devops-openapi`:
+
+* `{area}/{apiVersion}/`: the Kubb output for one area. When the manifest marks an area
+  `identical` in the next API version, both versions use the folder of the first one.
+* `{apiVersion}/index.ts`: one namespace per area.
+* `{apiVersion}/operations.ts`: the `api-version` and the host of every operation.
+* `compatibility.ts`: the API versions and products of the manifest.
 
 ## License
 

@@ -1,7 +1,13 @@
-import { callAPI, type CallOptions, type ClientContext } from './context';
-import { type Iteration, IterationSchema, listOf } from './schemas';
+import { callAPI, type CallOptions, type ClientContext } from '../core/context';
+import type { z } from 'zod';
+import { iterationsListResponseSchema } from '../generated/work/7.0/zod';
 
-const IterationListSchema = listOf(IterationSchema);
+type TeamSettingsIteration = z.infer<typeof iterationsListResponseSchema>[number];
+
+/** The operations that the helpers call, as keys of the client's operation table. */
+export const WORK_OPERATIONS = {
+   listIterations: 'GET /{project}/{team}/_apis/work/teamsettings/iterations',
+} as const;
 
 /** Boards and sprint settings for a team. */
 export class Work {
@@ -12,18 +18,19 @@ export class Work {
       project: string,
       team: string,
       options: CallOptions & { readonly timeframe?: 'past' | 'current' | 'future' } = {},
-   ): Promise<Iteration[]> {
+   ): Promise<TeamSettingsIteration[]> {
       const { data } = await callAPI(
          this.context,
          {
+            operation: WORK_OPERATIONS.listIterations,
             path: [project, team, '_apis', 'work', 'teamsettings', 'iterations'],
             query: { $timeframe: options.timeframe },
-            schema: IterationListSchema,
+            schema: iterationsListResponseSchema,
          },
          options,
       );
 
-      return data.value;
+      return data;
    }
 
    /** Returns `undefined` when no iteration covers today. */
@@ -31,7 +38,7 @@ export class Work {
       project: string,
       team: string,
       options: CallOptions = {},
-   ): Promise<Iteration | undefined> {
+   ): Promise<TeamSettingsIteration | undefined> {
       const iterations = await this.listIterations(project, team, { ...options, timeframe: 'current' });
 
       return iterations[0];

@@ -31,20 +31,69 @@
    "main": "./dist/index.cjs",
    "module": "./dist/index.js",
    "types": "./dist/index.d.cts",
+   "typesVersions": {
+      "*": {
+         "7.0": [
+            "./dist/7.0.d.cts"
+         ],
+         "7.1": [
+            "./dist/7.1.d.cts"
+         ],
+         "services": [
+            "./dist/services.d.cts"
+         ],
+         "server": [
+            "./dist/server.d.cts"
+         ],
+         "server-2022": [
+            "./dist/server-2022.d.cts"
+         ],
+         "compatibility": [
+            "./dist/compatibility.d.cts"
+         ]
+      }
+   },
    "exports": {
       ".": {
          "import": "./dist/index.js",
          "require": "./dist/index.cjs"
       },
+      "./7.0": {
+         "import": "./dist/7.0.js",
+         "require": "./dist/7.0.cjs"
+      },
+      "./7.1": {
+         "import": "./dist/7.1.js",
+         "require": "./dist/7.1.cjs"
+      },
+      "./services": {
+         "import": "./dist/services.js",
+         "require": "./dist/services.cjs"
+      },
+      "./server": {
+         "import": "./dist/server.js",
+         "require": "./dist/server.cjs"
+      },
+      "./server-2022": {
+         "import": "./dist/server-2022.js",
+         "require": "./dist/server-2022.cjs"
+      },
+      "./compatibility": {
+         "import": "./dist/compatibility.js",
+         "require": "./dist/compatibility.cjs"
+      },
       "./package.json": "./package.json"
    },
    "scripts": {
-      "build": "vp pack",
-      "test": "vp test run",
-      "test:node": "vp test run --project node",
       "test:watch": "vp test"
    },
    "devDependencies": {
+      "@hypothesi/azure-devops-openapi": "*",
+      "@kubb/adapter-oas": "5.15.3",
+      "@kubb/plugin-client": "5.9.0",
+      "@kubb/plugin-ts": "5.4.0",
+      "@kubb/plugin-zod": "5.8.0",
+      "kubb": "5.15.3",
       "zod": "4.6.7"
    },
    "peerDependencies": {
@@ -52,5 +101,12 @@
    },
    "engines": {
       "node": ">=22.18.0"
+   },
+   "azureDevOps": {
+      "apiVersions": [
+         "7.0",
+         "7.1"
+      ],
+      "specSnapshot": "swh:1:dir:eb5a1ee87e2a2fe00bd29c737b8f12aa68693ac3"
    }
 }

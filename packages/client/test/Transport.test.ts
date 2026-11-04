@@ -11,8 +11,8 @@ import {
    ResponseValidationError,
    type RetryEvent,
    TimeoutError,
-} from '../src/index';
-import { Transport } from '../src/Transport';
+} from '../src/entries/7.1';
+import { Transport } from '../src/core/Transport';
 import {
    createFakeClient,
    createFakeFetch,

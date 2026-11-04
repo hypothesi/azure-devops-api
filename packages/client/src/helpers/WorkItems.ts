@@ -1,20 +1,22 @@
 import { z } from 'zod';
-import { buildURL, callAPI, type CallOptions, type ClientContext, paginate } from './context';
-import { InvalidInputError } from './errors';
+import { buildURL, callAPI, type CallOptions, type ClientContext, paginate, type QueryParams } from '../core/context';
+import { InvalidInputError } from '../core/errors';
+import { workItemSearchResponseSchema } from '../generated/search/7.0/zod';
 import {
-   type AttachmentReference,
-   AttachmentReferenceSchema,
-   type Comment,
-   CommentListSchema,
-   CommentSchema,
-   type WiqlResult,
-   WiqlResultSchema,
-   type WorkItem,
-   WorkItemBatchSchema,
-   WorkItemSchema,
-   type WorkItemSearchResult,
-   WorkItemSearchResponseSchema,
-} from './schemas';
+   attachmentReferenceSchema,
+   commentListSchema,
+   commentSchema,
+   workItemQueryResultSchema,
+   workItemSchema,
+} from '../generated/wit/7.0/zod';
+
+// The helpers return what the Zod schemas parse. Under `exactOptionalPropertyTypes`, those
+// types differ from the generated TypeScript types in `| undefined` on optional properties.
+type WorkItem = z.infer<typeof workItemSchema>;
+type WorkItemQueryResult = z.infer<typeof workItemQueryResultSchema>;
+type Comment = z.infer<typeof commentSchema>;
+type AttachmentReference = z.infer<typeof attachmentReferenceSchema>;
+type WorkItemSearchResult = NonNullable<z.infer<typeof workItemSearchResponseSchema>['results']>[number];
 
 export type WorkItemExpand = 'none' | 'relations' | 'fields' | 'links' | 'all';
 
@@ -101,7 +103,10 @@ export interface SearchOptions extends CallOptions {
 }
 
 export interface CommentOptions extends CallOptions {
-   /** Default: `markdown`. */
+   /**
+    * Default: `markdown` where the API version has the `format` parameter (7.1), otherwise
+    * none. API version 7.0 has no `format` parameter, so passing one throws `InvalidInputError`.
+    */
    readonly format?: 'markdown' | 'html';
 }
 
@@ -115,9 +120,35 @@ export interface UploadAttachmentInput extends CallOptions {
 const BATCH_SIZE = 200,
    DEFAULT_SEARCH_PAGE_SIZE = 100,
    COMMENTS_PAGE_SIZE = 200,
-   // `format=markdown` on comments requires this preview version.
-   COMMENTS_API_VERSION = '7.2-preview.4',
-   JSON_PATCH = 'application/json-patch+json';
+   JSON_PATCH = 'application/json-patch+json',
+   // The spec does not allow `null` items, but Azure DevOps sends them for missing IDs with errorPolicy "omit".
+   WorkItemBatchSchema = z.looseObject({ value: z.array(workItemSchema.nullable()) });
+
+/**
+ * The operations that the helpers call, as keys of the client's operation table. The spec
+ * puts `{project}` in every path, but Azure DevOps also accepts the paths without a project.
+ */
+export const WORK_ITEM_OPERATIONS = {
+   get: 'GET /{project}/_apis/wit/workitems/{id}',
+   list: 'POST /{project}/_apis/wit/workitemsbatch',
+   create: 'POST /{project}/_apis/wit/workitems/${type}',
+   update: 'PATCH /{project}/_apis/wit/workitems/{id}',
+   delete: 'DELETE /{project}/_apis/wit/workitems/{id}',
+   query: 'POST /{project}/{team}/_apis/wit/wiql',
+   search: 'POST /{project}/_apis/search/workitemsearchresults',
+   // The spec's `?` key is the paged list, with `$top`, `continuationToken`, and `order`.
+   listComments: 'GET /{project}/_apis/wit/workItems/{workItemId}/comments?',
+   addComment: 'POST /{project}/_apis/wit/workItems/{workItemId}/comments',
+   updateComment: 'PATCH /{project}/_apis/wit/workItems/{workItemId}/comments/{commentId}',
+   deleteComment: 'DELETE /{project}/_apis/wit/workItems/{workItemId}/comments/{commentId}',
+   uploadAttachment: 'POST /{project}/_apis/wit/attachments',
+} as const;
+
+/** The comment operations with a `format` query parameter. Only some API versions have them. */
+export const COMMENT_FORMAT_OPERATIONS = {
+   addComment: 'POST /{project}/_apis/wit/workItems/{workItemId}/comments?format={format}',
+   updateComment: 'PATCH /{project}/_apis/wit/workItems/{workItemId}/comments/{commentId}?format={format}',
+} as const;
 
 /** Work item tracking: work items, WIQL queries, search, comments, and attachments. */
 export class WorkItems {
@@ -131,13 +162,14 @@ export class WorkItems {
       const { data } = await callAPI(
          this.context,
          {
+            operation: WORK_ITEM_OPERATIONS.get,
             path: ['_apis', 'wit', 'workitems', id],
             query: {
                fields: options.fields?.join(','),
                $expand: options.expand,
                asOf: options.asOf?.toISOString(),
             },
-            schema: WorkItemSchema,
+            schema: workItemSchema,
          },
          options,
       );
@@ -161,6 +193,7 @@ export class WorkItems {
                this.context,
                {
                   method: 'POST',
+                  operation: WORK_ITEM_OPERATIONS.list,
                   path: ['_apis', 'wit', 'workitemsbatch'],
                   body: {
                      json: {
@@ -196,10 +229,11 @@ export class WorkItems {
          this.context,
          {
             method: 'POST',
+            operation: WORK_ITEM_OPERATIONS.create,
             path: [input.project, '_apis', 'wit', 'workitems', `$${input.type}`],
             query: getWriteQuery(input),
             body: { json: operations, contentType: JSON_PATCH },
-            schema: WorkItemSchema,
+            schema: workItemSchema,
          },
          input,
       );
@@ -226,10 +260,11 @@ export class WorkItems {
          this.context,
          {
             method: 'PATCH',
+            operation: WORK_ITEM_OPERATIONS.update,
             path: ['_apis', 'wit', 'workitems', id],
             query: getWriteQuery(input),
             body: { json: [...revisionCheck, ...changes], contentType: JSON_PATCH },
-            schema: WorkItemSchema,
+            schema: workItemSchema,
          },
          input,
       );
@@ -249,6 +284,7 @@ export class WorkItems {
          this.context,
          {
             method: 'DELETE',
+            operation: WORK_ITEM_OPERATIONS.delete,
             path: ['_apis', 'wit', 'workitems', id],
             query: { destroy: options.destroy },
             schema: z.unknown(),
@@ -258,7 +294,7 @@ export class WorkItems {
    }
 
    /** Runs a WIQL query. The result has work item IDs only. Use `queryWorkItems` to get the work items. */
-   public async query(wiql: string, options: QueryOptions = {}): Promise<WiqlResult> {
+   public async query(wiql: string, options: QueryOptions = {}): Promise<WorkItemQueryResult> {
       const scope = [options.project, options.team].filter((segment) => {
          return segment !== undefined;
       });
@@ -271,10 +307,11 @@ export class WorkItems {
          this.context,
          {
             method: 'POST',
+            operation: WORK_ITEM_OPERATIONS.query,
             path: [...scope, '_apis', 'wit', 'wiql'],
             query: { $top: options.top },
             body: { json: { query: wiql } },
-            schema: WiqlResultSchema,
+            schema: workItemQueryResultSchema,
             idempotent: true,
          },
          options,
@@ -286,8 +323,8 @@ export class WorkItems {
    /** Runs a WIQL query and gets the matching work items, in the query's order. */
    public async queryWorkItems(wiql: string, options: QueryOptions & ListWorkItemsOptions = {}): Promise<WorkItem[]> {
       const result = await this.query(wiql, options),
-         ids = (result.workItems ?? []).map((reference) => {
-            return reference.id;
+         ids = (result.workItems ?? []).flatMap((reference) => {
+            return reference.id === undefined ? [] : [reference.id];
          });
 
       return this.list(ids, options);
@@ -312,17 +349,18 @@ export class WorkItems {
                this.context,
                {
                   method: 'POST',
+                  operation: WORK_ITEM_OPERATIONS.search,
                   path: ['_apis', 'search', 'workitemsearchresults'],
                   body: { json: { searchText: text, $skip: skip, $top: top, filters, includeFacets: false } },
-                  schema: WorkItemSearchResponseSchema,
+                  schema: workItemSearchResponseSchema,
                   idempotent: true,
-                  search: true,
                },
                options,
             ),
-            isLastPage = data.results.length < top || skip + top >= data.count;
+            results = data.results ?? [],
+            isLastPage = results.length < top || skip + top >= (data.count ?? 0);
 
-         return { items: data.results, next: isLastPage ? undefined : skip + top };
+         return { items: results, next: isLastPage ? undefined : skip + top };
       });
    }
 
@@ -334,15 +372,15 @@ export class WorkItems {
          const { data } = await callAPI(
             this.context,
             {
+               operation: WORK_ITEM_OPERATIONS.listComments,
                path: [project, '_apis', 'wit', 'workItems', workItemID, 'comments'],
                query: { $top: COMMENTS_PAGE_SIZE, order: 'asc', continuationToken },
-               apiVersion: COMMENTS_API_VERSION,
-               schema: CommentListSchema,
+               schema: commentListSchema,
             },
             options,
          );
 
-         return { items: data.comments, next: data.continuationToken ?? undefined };
+         return { items: data.comments ?? [], next: data.continuationToken ?? undefined };
       });
    }
 
@@ -358,11 +396,14 @@ export class WorkItems {
          this.context,
          {
             method: 'POST',
+            ...this.getFormatCall(
+               WORK_ITEM_OPERATIONS.addComment,
+               COMMENT_FORMAT_OPERATIONS.addComment,
+               options.format,
+            ),
             path: [project, '_apis', 'wit', 'workItems', workItemID, 'comments'],
-            query: { format: options.format ?? 'markdown' },
-            apiVersion: COMMENTS_API_VERSION,
             body: { json: { text } },
-            schema: CommentSchema,
+            schema: commentSchema,
          },
          options,
       );
@@ -384,11 +425,14 @@ export class WorkItems {
          this.context,
          {
             method: 'PATCH',
+            ...this.getFormatCall(
+               WORK_ITEM_OPERATIONS.updateComment,
+               COMMENT_FORMAT_OPERATIONS.updateComment,
+               options.format,
+            ),
             path: [project, '_apis', 'wit', 'workItems', workItemID, 'comments', commentID],
-            query: { format: options.format ?? 'markdown' },
-            apiVersion: COMMENTS_API_VERSION,
             body: { json: { text } },
-            schema: CommentSchema,
+            schema: commentSchema,
             // Setting the same text twice gives the same result.
             idempotent: true,
          },
@@ -411,8 +455,8 @@ export class WorkItems {
          this.context,
          {
             method: 'DELETE',
+            operation: WORK_ITEM_OPERATIONS.deleteComment,
             path: [project, '_apis', 'wit', 'workItems', workItemID, 'comments', commentID],
-            apiVersion: COMMENTS_API_VERSION,
             schema: z.unknown(),
          },
          options,
@@ -435,10 +479,11 @@ export class WorkItems {
          this.context,
          {
             method: 'POST',
+            operation: WORK_ITEM_OPERATIONS.uploadAttachment,
             path: [...scope, '_apis', 'wit', 'attachments'],
             query: { fileName: input.fileName, uploadType: 'Simple' },
             body: { binary: input.content },
-            schema: AttachmentReferenceSchema,
+            schema: attachmentReferenceSchema,
          },
          input,
       );
@@ -451,6 +496,29 @@ export class WorkItems {
       assertID(id);
 
       return buildURL(this.context.organizationURL, ['_apis', 'wit', 'workItems', id]).toString();
+   }
+
+   /**
+    * Picks the operation with a `format` parameter when the client's API version has it.
+    *
+    * @throws {InvalidInputError} when the caller passes `format` and the API version has no such parameter.
+    */
+   private getFormatCall(
+      operation: string,
+      formatOperation: string,
+      format: CommentOptions['format'],
+   ): { operation: string; query: QueryParams } {
+      if (this.context.table.operations[formatOperation] !== undefined) {
+         return { operation: formatOperation, query: { format: format ?? 'markdown' } };
+      }
+
+      if (format !== undefined) {
+         throw new InvalidInputError(
+            `Azure DevOps REST API ${this.context.table.apiVersion} has no format parameter for comments`,
+         );
+      }
+
+      return { operation, query: {} };
    }
 
    private toPatch(changes: WorkItemChanges): JsonPatchOperation[] {

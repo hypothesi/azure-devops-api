@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vite-plus/test';
-import { InvalidInputError } from '../src/index';
+import { createClient as createClient70 } from '../src/entries/7.0';
+import { InvalidInputError } from '../src/entries/7.1';
 import { createFakeClient, getRequest, respondJSON, respondStatus } from './fake-fetch';
 
 const WORK_ITEM = {
@@ -230,7 +231,50 @@ describe('WorkItems', () => {
 
          expect(comments).toHaveLength(2);
          expect(secondURL.searchParams.get('continuationToken')).toBe('next');
-         expect(secondURL.searchParams.get('api-version')).toBe('7.2-preview.4');
+         expect(secondURL.searchParams.get('api-version')).toBe('7.1-preview.4');
+      });
+
+      it.each([
+         ['7.0', createClient70, '7.0-preview.3', null],
+         ['7.1', undefined, '7.1-preview.4', 'markdown'],
+      ] as const)(
+         'sends the comment versions of a %s client and format only where the spec has it',
+         async (_apiVersion, create, expectedVersion, expectedFormat) => {
+            const { client, requests } = createFakeClient(
+               [respondJSON({ comments: [] }), respondJSON(comment), respondJSON(comment), respondStatus(204)],
+               {},
+               create,
+            );
+
+            await Array.fromAsync(client.workItems.listComments('Web', 7));
+            await client.workItems.addComment('Web', 7, 'hi');
+            await client.workItems.updateComment('Web', 7, 1, 'hi');
+            await client.workItems.deleteComment('Web', 7, 1);
+
+            const urls = requests.map((request) => {
+               return new URL(request.url);
+            });
+
+            expect(
+               urls.map((url) => {
+                  return url.searchParams.get('api-version');
+               }),
+            ).toEqual([expectedVersion, expectedVersion, expectedVersion, expectedVersion]);
+            expect(
+               urls.slice(1, 3).map((url) => {
+                  return url.searchParams.get('format');
+               }),
+            ).toEqual([expectedFormat, expectedFormat]);
+         },
+      );
+
+      it('throws InvalidInputError for a format that the 7.0 comment operations do not have', async () => {
+         const { client, requests } = createFakeClient([], {}, createClient70);
+
+         await expect(client.workItems.addComment('Web', 7, 'hi', { format: 'html' })).rejects.toBeInstanceOf(
+            InvalidInputError,
+         );
+         expect(requests).toHaveLength(0);
       });
 
       it('adds a comment as Markdown', async () => {
@@ -252,7 +296,9 @@ describe('WorkItems', () => {
    });
 
    it('uploads an attachment as binary content', async () => {
-      const { client, requests } = createFakeClient([respondJSON({ id: 'a1', url: 'https://example.com/a1' })]);
+      const { client, requests } = createFakeClient([
+         respondJSON({ id: '6f1c2f5e-0b7a-4c1e-9a52-3f0b1d4e2a10', url: 'https://example.com/a1' }),
+      ]);
 
       const attachment = await client.workItems.uploadAttachment({
          project: 'Web',

@@ -1,7 +1,6 @@
 import type { z } from 'zod';
-import { callAPI, type CallOptions, type ClientContext, type QueryParams } from './context';
+import { callAPI, type CallOptions, type ClientContext, type OperationTable, type QueryParams } from './context';
 import { InvalidInputError } from './errors';
-import { Projects } from './Projects';
 import {
    type HTTPMethod,
    type RequestBody,
@@ -10,8 +9,6 @@ import {
    type SendResult,
    Transport,
 } from './Transport';
-import { Work } from './Work';
-import { WorkItems } from './WorkItems';
 
 export type TokenProvider = () => string | Promise<string>;
 
@@ -36,8 +33,6 @@ export interface AzureDevOpsClientOptions {
     * for `dev.azure.com` organizations, otherwise the organization URL.
     */
    readonly searchURL?: string;
-   /** Default: `7.1`. */
-   readonly apiVersion?: string;
    /** The time limit for each attempt, including reading the response body. Default: `30000`. */
    readonly timeoutMs?: number;
    readonly retry?: RetryOptions;
@@ -56,103 +51,94 @@ export interface RequestOptions<T> extends CallOptions {
     */
    readonly path: string | readonly (string | number)[];
    readonly query?: QueryParams;
-   /** Default: the client's `apiVersion`. */
+   /** Default: the API version of the entry point, such as `7.1`. */
    readonly apiVersion?: string;
    readonly body?: RequestBody;
    readonly schema: z.ZodType<T>;
    readonly idempotent?: boolean;
 }
 
-const DEFAULT_API_VERSION = '7.1',
-   DEFAULT_TIMEOUT_MS = 30_000,
+const DEFAULT_TIMEOUT_MS = 30_000,
    DEFAULT_RETRY: Required<RetryOptions> = { maxRetries: 3, baseDelayMs: 500, maxDelayMs: 30_000 },
    CLOUD_HOST = 'dev.azure.com',
-   CLOUD_SEARCH_HOST = 'almsearch.dev.azure.com';
+   CLOUD_SEARCH_HOST = 'almsearch.dev.azure.com',
+   ORGANIZATION_PLACEHOLDER = '{organization}';
+
+/** Validates the options and builds the state that the generated operations and the helpers share. */
+export function createContext(options: AzureDevOpsClientOptions, table: OperationTable): ClientContext {
+   const organizationURL = getOrganizationURL(options.organization),
+      searchURL = options.searchURL ? parseURL(options.searchURL, 'searchURL') : getDefaultSearchURL(organizationURL),
+      serverURLs = table.servers.map((server) => {
+         return getServerURL(server, organizationURL, searchURL);
+      }),
+      getAuthorization = getAuthorizationProvider(options.auth),
+      fetchFunction = options.fetch ?? globalThis.fetch,
+      retry = { ...DEFAULT_RETRY, ...options.retry },
+      timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+
+   if (typeof fetchFunction !== 'function') {
+      throw new InvalidInputError('No fetch implementation is available. Pass one in the fetch option.');
+   }
+
+   assertNonNegative({ timeoutMs, ...retry });
+
+   return {
+      organizationURL,
+      searchURL,
+      table,
+      serverURLs,
+      transport: new Transport({
+         // Calling an unbound `window.fetch` throws "Illegal invocation" in browsers.
+         fetch: fetchFunction.bind(globalThis),
+         getAuthorization,
+         allowedOrigins: new Set(
+            [organizationURL, searchURL, ...serverURLs].map((url) => {
+               return url.origin;
+            }),
+         ),
+         timeoutMs,
+         retry,
+         onRetry: options.onRetry,
+      }),
+   };
+}
+
+/** Calls any endpoint under the organization URL. The response must match `options.schema`. */
+export function request<T>(context: ClientContext, options: RequestOptions<T>): Promise<SendResult<T>> {
+   const segments = typeof options.path === 'string' ? options.path.split('/').filter(Boolean) : options.path;
+
+   return callAPI(
+      context,
+      {
+         method: options.method ?? 'GET',
+         path: segments,
+         query: options.query ?? {},
+         apiVersion: options.apiVersion,
+         body: options.body,
+         schema: options.schema,
+         idempotent: options.idempotent,
+      },
+      options,
+   );
+}
 
 /**
- * A typed Azure DevOps REST API client.
- *
- * @example
- * ```ts
- * const client = new AzureDevOpsClient({
- *    organization: 'contoso',
- *    auth: { type: 'pat', token: process.env.AZURE_DEVOPS_PAT ?? '' },
- * });
- *
- * const workItem = await client.workItems.get(42);
- * ```
+ * The base URL of a spec server for this organization. Azure DevOps Services serves some
+ * areas from other hosts, such as `feeds.dev.azure.com`. A server serves every area from the
+ * collection URL.
  */
-export class AzureDevOpsClient {
-   public readonly workItems: WorkItems;
-   public readonly projects: Projects;
-   public readonly work: Work;
-   private readonly context: ClientContext;
+function getServerURL(server: string, organizationURL: URL, searchURL: URL): URL {
+   const organization = organizationURL.pathname.split('/')[1] ?? '';
 
-   public constructor(options: AzureDevOpsClientOptions) {
-      const organizationURL = getOrganizationURL(options.organization),
-         searchURL = options.searchURL
-            ? parseURL(options.searchURL, 'searchURL')
-            : getDefaultSearchURL(organizationURL),
-         getAuthorization = getAuthorizationProvider(options.auth),
-         fetchFunction = options.fetch ?? globalThis.fetch,
-         retry = { ...DEFAULT_RETRY, ...options.retry },
-         timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
-
-      if (typeof fetchFunction !== 'function') {
-         throw new InvalidInputError('No fetch implementation is available. Pass one in the fetch option.');
-      }
-
-      assertNonNegative({ timeoutMs, ...retry });
-
-      this.context = {
-         organizationURL,
-         searchURL,
-         apiVersion: options.apiVersion ?? DEFAULT_API_VERSION,
-         transport: new Transport({
-            // Calling an unbound `window.fetch` throws "Illegal invocation" in browsers.
-            fetch: fetchFunction.bind(globalThis),
-            getAuthorization,
-            allowedOrigins: new Set([organizationURL.origin, searchURL.origin]),
-            timeoutMs,
-            retry,
-            onRetry: options.onRetry,
-         }),
-      };
-
-      this.workItems = new WorkItems(this.context);
-      this.projects = new Projects(this.context);
-      this.work = new Work(this.context);
+   if (server.includes(CLOUD_SEARCH_HOST)) {
+      return searchURL;
    }
 
-   /**
-    * Calls any endpoint under the organization URL. Use it for APIs that this library does
-    * not wrap. The response must match `schema`.
-    *
-    * @example
-    * ```ts
-    * const { data } = await client.request({
-    *    path: ['MyProject', '_apis', 'git', 'repositories'],
-    *    schema: z.object({ value: z.array(z.object({ id: z.string(), name: z.string() })) }),
-    * });
-    * ```
-    */
-   public request<T>(options: RequestOptions<T>): Promise<SendResult<T>> {
-      const segments = typeof options.path === 'string' ? options.path.split('/').filter(Boolean) : options.path;
-
-      return callAPI(
-         this.context,
-         {
-            method: options.method ?? 'GET',
-            path: segments,
-            query: options.query ?? {},
-            apiVersion: options.apiVersion,
-            body: options.body,
-            schema: options.schema,
-            idempotent: options.idempotent,
-         },
-         options,
-      );
+   if (organizationURL.host !== CLOUD_HOST || !server.startsWith('https://')) {
+      return organizationURL;
    }
+
+   return parseURL(server.replace(ORGANIZATION_PLACEHOLDER, organization), 'server');
 }
 
 function parseURL(value: string, optionName: string): URL {
