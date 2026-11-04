@@ -1,0 +1,84 @@
+{
+   "source": {
+      "repository": "https://github.com/MicrosoftDocs/vsts-rest-api-specs",
+      "license": "MIT",
+      "snapshot": "swh:1:dir:eb5a1ee87e2a2fe00bd29c737b8f12aa68693ac3",
+      "revision": "0000000000000000000000000000000000000000",
+      "specificationDirectory": "specification"
+   },
+   "openapiVersion": "3.2.0",
+   "apiVersions": {
+      "7.0": { "status": "released", "products": ["services", "server", "server-2022"] },
+      "7.1": { "status": "released", "products": ["services", "server"] }
+   },
+   "products": {
+      "services": {
+         "name": "Azure DevOps Services",
+         "highestApiVersion": "7.1",
+         "source": "OPTIONS https://dev.azure.com/{organization}/_apis/",
+         "verifiedOn": "2026-11-01"
+      },
+      "server": {
+         "name": "Azure DevOps Server",
+         "highestApiVersion": "7.1",
+         "source": "Microsoft Learn REST API versions table",
+         "verifiedOn": null
+      },
+      "server-2022": {
+         "name": "Azure DevOps Server 2022",
+         "highestApiVersion": "7.0",
+         "source": "Microsoft Learn REST API versions table",
+         "verifiedOn": null
+      }
+   },
+   "areas": {
+      "wit": {
+         "title": "Work Item Tracking",
+         "versions": {
+            "7.0": {
+               "file": "dist/openapi/7.0/wit.json",
+               "operations": 80,
+               "previewOperations": 40,
+               "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "7.1": {
+               "file": "dist/openapi/7.1/wit.json",
+               "operations": 81,
+               "previewOperations": 40,
+               "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+               "comparedToPrevious": {
+                  "apiVersion": "7.0",
+                  "change": "breaking",
+                  "addedOperations": ["Work Items_Get Work Items Batch"],
+                  "removedOperations": [],
+                  "changes": ["schema WorkItem: property <rev> changed"]
+               }
+            }
+         }
+      },
+      "core": {
+         "title": "Core",
+         "versions": {
+            "7.0": {
+               "file": "dist/openapi/7.0/core.json",
+               "operations": 18,
+               "previewOperations": 0,
+               "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "7.1": {
+               "file": "dist/openapi/7.1/core.json",
+               "operations": 18,
+               "previewOperations": 0,
+               "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+               "comparedToPrevious": {
+                  "apiVersion": "7.0",
+                  "change": "identical",
+                  "addedOperations": [],
+                  "removedOperations": [],
+                  "changes": []
+               }
+            }
+         }
+      }
+   }
+}

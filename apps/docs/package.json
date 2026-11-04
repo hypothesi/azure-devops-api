@@ -1,0 +1,19 @@
+{
+   "name": "@hypothesi/azure-devops-api-docs",
+   "version": "0.0.0",
+   "private": true,
+   "type": "module",
+   "scripts": {
+      "coverage": "vp test run --coverage",
+      "dev": "node scripts/prepare.ts && vp dev",
+      "preview": "vp preview",
+      "test": "vp test run",
+      "test:node": "vp test run"
+   },
+   "devDependencies": {
+      "@hypothesi/azure-devops-api": "*",
+      "@hypothesi/azure-devops-openapi": "*",
+      "@scalar/api-reference": "1.76.4",
+      "sass": "1.107.1"
+   }
+}

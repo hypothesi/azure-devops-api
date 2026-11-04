@@ -1,0 +1,44 @@
+{
+   "openapi": "3.2.0",
+   "info": { "title": "Azure DevOps", "version": "7.1" },
+   "servers": [
+      { "url": "https://dev.azure.com/{organization}", "variables": { "organization": { "default": "contoso" } } }
+   ],
+   "paths": {
+      "/{project}/_apis/wit/workitems/{id}": {
+         "parameters": [],
+         "get": {
+            "operationId": "Work Items_Get Work Item",
+            "tags": ["Work Items"],
+            "x-ado-area": "wit",
+            "x-ado-api-version": "7.1",
+            "parameters": [
+               { "name": "project", "in": "path", "required": true, "schema": { "type": "string" } },
+               { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } },
+               { "name": "$expand", "in": "query", "required": false, "schema": { "type": "string" } },
+               { "$ref": "#/components/parameters/api-Version" }
+            ]
+         }
+      },
+      "/{project}/_apis/wit/classificationnodes?ids={ids}": {
+         "get": {
+            "operationId": "Classification Nodes_Get Classification Nodes",
+            "x-ado-area": "wit",
+            "parameters": [
+               { "name": "project", "in": "path", "required": true, "schema": { "type": "string" } },
+               { "name": "ids", "in": "query", "required": true, "schema": { "type": "string" } },
+               { "name": "X-Request-Id", "in": "header", "required": true, "schema": { "type": "string" } }
+            ]
+         },
+         "post": {
+            "x-ado-area": "wit",
+            "requestBody": { "required": true }
+         }
+      }
+   },
+   "components": {
+      "parameters": {
+         "api-Version": { "name": "api-version", "in": "query", "required": true, "schema": { "type": "string" } }
+      }
+   }
+}

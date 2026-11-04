@@ -1,0 +1,91 @@
+// Colors copied from Scalar's default theme so the pages match the API reference.
+:root {
+   --docs-bgColor: #ffffff;
+   --docs-bgColor--subtle: #f6f6f6;
+   --docs-color: #1b1b1b;
+   --docs-color--muted: #707070;
+   --docs-color--accent: #0099ff;
+   --docs-borderColor: #dfdfdf;
+
+   color-scheme: light dark;
+}
+
+@media (prefers-color-scheme: dark) {
+   :root {
+      --docs-bgColor: #0f0f0f;
+      --docs-bgColor--subtle: #1a1a1a;
+      --docs-color: #e7e7e7;
+      --docs-color--muted: #a4a4a4;
+      --docs-color--accent: #00aeff;
+      --docs-borderColor: #2d2d2d;
+   }
+}
+
+body {
+   margin: 0;
+   background: var(--docs-bgColor);
+   color: var(--docs-color);
+   font-family: system-ui, sans-serif;
+   line-height: 1.5;
+}
+
+nav,
+main {
+   max-inline-size: 72rem;
+   padding-inline: 1.5rem;
+   margin-inline: auto;
+}
+
+nav {
+   padding-block: 1rem;
+   border-block-end: 1px solid var(--docs-borderColor);
+}
+
+a {
+   color: var(--docs-color--accent);
+}
+
+code,
+pre {
+   font-family: ui-monospace, monospace;
+   font-size: 0.875em;
+}
+
+pre {
+   overflow-x: auto;
+   padding: 1rem;
+   border: 1px solid var(--docs-borderColor);
+   border-radius: 0.5rem;
+   background: var(--docs-bgColor--subtle);
+}
+
+table {
+   inline-size: 100%;
+   border-collapse: collapse;
+   margin-block: 1rem;
+}
+
+th,
+td {
+   padding: 0.5rem 0.75rem;
+   border: 1px solid var(--docs-borderColor);
+   text-align: start;
+   vertical-align: top;
+}
+
+th {
+   background: var(--docs-bgColor--subtle);
+}
+
+td ul {
+   padding-inline-start: 1.25rem;
+   margin: 0;
+}
+
+h3 {
+   margin-block-start: 2rem;
+}
+
+p {
+   color: var(--docs-color--muted);
+}

@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+   <head>
+      <meta charset="utf-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1" />
+      <link rel="icon" href="data:," />
+      <link rel="stylesheet" href="./src/site.scss" />
+      <title>@hypothesi/azure-devops-api</title>
+   </head>
+   <body>
+      <main>
+         <h1>@hypothesi/azure-devops-api</h1>
+         <p>
+            A typed Azure DevOps REST API client for browsers and Node.js, generated from the Azure DevOps OpenAPI
+            documents.
+         </p>
+         <ul>
+            <li><a href="./reference.html">API reference</a>, with one document per API version</li>
+            <li>
+               <a href="./compatibility.html">Compatibility</a>: which entry point and API version to use with each
+               Azure DevOps product
+            </li>
+         </ul>
+
+         <h2>Install</h2>
+         <pre><code>npm install @hypothesi/azure-devops-api zod</code></pre>
+
+         <h2>Quick start</h2>
+         <p>
+            Import from the entry point for your product. <code>/services</code> is for Azure DevOps Services.
+            <code>/server-2022</code> is for Azure DevOps Server 2022. The compatibility page lists all entry points.
+         </p>
+         <pre><code>import { createClient, wit } from '@hypothesi/azure-devops-api/services';
+
+const ado = createClient({ organization: 'contoso', auth: { type: 'pat', token: process.env.AZURE_DEVOPS_PAT ?? '' } });
+
+const workItem = await wit.workItemsGetWorkItem({ client: ado, path: { project: 'Web', id: 42 } });</code></pre>
+      </main>
+   </body>
+</html>
