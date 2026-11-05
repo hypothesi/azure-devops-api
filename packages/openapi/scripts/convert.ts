@@ -11,6 +11,7 @@ import { getObject, getString, isJsonObject, parseJsonObject } from './lib/json.
 import type { JsonObject } from './lib/json.ts';
 import { mergeDocuments, toPascalCase } from './lib/merge.ts';
 import {
+   allowNullInOptionalProperties,
    addApiVersions,
    addArea,
    fixFormatTypes,
@@ -143,7 +144,9 @@ function writeArea(apiVersion: string, area: string, document: JsonObject): void
    writeJson(path.join(DIST_DIR, 'openapi', apiVersion, `${area}.json`), document);
    writeJson(
       path.join(DIST_DIR, 'codegen', apiVersion, `${area}.json`),
-      markStreamsAsBinary(openObjectSchemas(removeApiVersionParameter(moveMsPathsIntoPaths(document)))),
+      allowNullInOptionalProperties(
+         markStreamsAsBinary(openObjectSchemas(removeApiVersionParameter(moveMsPathsIntoPaths(document)))),
+      ),
    );
 }
 

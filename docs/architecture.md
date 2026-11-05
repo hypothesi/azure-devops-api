@@ -70,6 +70,9 @@ one GET per path, so these operations cannot go in `paths`.
   `x-ado-api-version`.
 * `dist/codegen` sets `additionalProperties: {}` on object schemas that have `properties`
   and no `additionalProperties`, and changes `format: Stream` to `format: binary`.
+* `dist/codegen` lets every property that is not in `required` be `null`. Azure DevOps
+  sends `null` for unset properties, for example `description` in `GET _apis/wit/fields`,
+  but the specs never mark a property as nullable.
 * Every operation in `dist/docs` has `x-ado-area`, the area folder name, for example `wit`.
 
 ## `packages/client` (`@hypothesi/azure-devops-api`)

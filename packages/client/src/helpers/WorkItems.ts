@@ -324,7 +324,7 @@ export class WorkItems {
    public async queryWorkItems(wiql: string, options: QueryOptions & ListWorkItemsOptions = {}): Promise<WorkItem[]> {
       const result = await this.query(wiql, options),
          ids = (result.workItems ?? []).flatMap((reference) => {
-            return reference.id === undefined ? [] : [reference.id];
+            return reference.id === undefined || reference.id === null ? [] : [reference.id];
          });
 
       return this.list(ids, options);

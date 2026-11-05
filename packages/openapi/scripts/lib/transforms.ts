@@ -527,6 +527,57 @@ export function openObjectSchemas(document: JsonObject): JsonObject {
    return result;
 }
 
+/**
+ * For codegen. Azure DevOps sends `null` for many properties that are not set, but the specs
+ * never mark a property as nullable. Every property that is not in `required` accepts `null`,
+ * so the generated types match the responses and the Zod schemas do not reject them.
+ * Run it last, because the other transforms check for a single `type` string.
+ */
+export function allowNullInOptionalProperties(document: JsonObject): JsonObject {
+   const result = structuredClone(document);
+
+   walkObjects(result, (node) => {
+      const { properties } = node;
+
+      if (!isJsonObject(properties) || !hasType(node, 'object')) {
+         return;
+      }
+
+      const required = new Set(Array.isArray(node.required) ? node.required : []);
+
+      for (const [name, property] of Object.entries(properties)) {
+         if (!required.has(name) && isJsonObject(property)) {
+            properties[name] = toNullable(property);
+         }
+      }
+   });
+
+   return result;
+}
+
+function hasType(schema: JsonObject, type: string): boolean {
+   return schema.type === type || (Array.isArray(schema.type) && schema.type.includes(type));
+}
+
+function toNullable(schema: JsonObject): JsonObject {
+   const { description, ...rest } = schema;
+
+   if (Object.keys(schema).length === 0 || hasType(schema, 'null')) {
+      return schema;
+   }
+
+   if (typeof schema.type === 'string') {
+      return {
+         ...schema,
+         type: [schema.type, 'null'],
+         ...(Array.isArray(schema.enum) ? { enum: [...schema.enum, null] } : {}),
+      };
+   }
+
+   // A $ref or a composition has no type to extend. The description stays on the outer schema.
+   return { ...(description === undefined ? {} : { description }), anyOf: [rest, { type: 'null' }] };
+}
+
 /** For codegen. Microsoft marks binary responses `format: Stream`, and Kubb types `format: binary` as `Blob`. */
 export function markStreamsAsBinary(document: JsonObject): JsonObject {
    const result = structuredClone(document);

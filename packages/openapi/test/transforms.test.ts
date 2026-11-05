@@ -3,6 +3,7 @@ import type { JsonObject } from '../scripts/lib/json.ts';
 import {
    addApiVersions,
    addArea,
+   allowNullInOptionalProperties,
    fixFormatTypes,
    matchPathParameterCase,
    markStreamsAsBinary,
@@ -348,6 +349,66 @@ describe('openObjectSchemas', () => {
       const schema = { type: 'object', properties: {}, additionalProperties: false };
 
       expect(openObjectSchemas(schema)).toEqual(schema);
+   });
+});
+
+describe('allowNullInOptionalProperties', () => {
+   const REF = { $ref: ';/components/schemas/IdentityRef' };
+
+   it('adds null to the type and the enum of an optional property, and keeps required ones', () => {
+      const result = allowNullInOptionalProperties({
+         type: 'object',
+         required: ['id'],
+         properties: {
+            id: { type: 'integer' },
+            name: { type: 'string', description: 'The name' },
+            state: { type: 'string', enum: ['active', 'closed'] },
+         },
+      });
+
+      expect(result.properties).toEqual({
+         id: { type: 'integer' },
+         name: { type: ['string', 'null'], description: 'The name' },
+         state: { type: ['string', 'null'], enum: ['active', 'closed', null] },
+      });
+   });
+
+   it('wraps a $ref in anyOf and keeps the description on the outer schema', () => {
+      const result = allowNullInOptionalProperties({
+         type: 'object',
+         properties: { owner: { ...REF, description: 'The owner' }, any: {} },
+      });
+
+      expect(result.properties).toEqual({
+         owner: { description: 'The owner', anyOf: [REF, { type: 'null' }] },
+         any: {},
+      });
+   });
+
+   it('changes nested object schemas and leaves maps that are not object schemas', () => {
+      const result = allowNullInOptionalProperties({
+         components: {
+            schemas: {
+               Item: {
+                  type: 'object',
+                  properties: { child: { type: 'object', properties: { tag: { type: 'string' } } } },
+               },
+            },
+         },
+      });
+
+      expect(result).toEqual({
+         components: {
+            schemas: {
+               Item: {
+                  type: 'object',
+                  properties: {
+                     child: { type: ['object', 'null'], properties: { tag: { type: ['string', 'null'] } } },
+                  },
+               },
+            },
+         },
+      });
    });
 });
 
