@@ -99,7 +99,6 @@ The client's version is separate from the Azure DevOps API versions:
 
 The `/compatibility` export and the `azureDevOps` field in the client's `package.json` list the
 supported API versions and products. The product rows come from Microsoft's documentation.
-None has been tested against a real instance yet.
 
 ## Development
 
