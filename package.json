@@ -17,7 +17,7 @@
       "test": "vp run -r test",
       "test:node": "vp run -r test:node",
       "changeset": "changeset",
-      "version-packages": "changeset version",
+      "version-packages": "changeset version && npm install --package-lock-only",
       "release": "npm run standards && npm run test:node && changeset publish",
       "coverage": "vp run -r coverage",
       "quality": "npm run coverage && fallow dead-code && fallow architecture && fallow dupes && fallow health packages/openapi --coverage packages/openapi/coverage && fallow health packages/client --coverage packages/client/coverage && fallow health apps/docs --coverage apps/docs/coverage"
