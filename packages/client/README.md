@@ -487,10 +487,10 @@ code.
 
 ```sh
 npm install
-npx playwright install chromium firefox webkit
+npx playwright install chromium
 npm run generate  # build @hypothesi/azure-devops-openapi and write src/generated
 npm run standards # generate, format, lint, type check, build, and package export checks
-npm test          # generate, then run every test in Node.js, Chromium, Firefox, and WebKit
+npm test          # generate, then run every test in Node.js and Chromium
 ```
 
 `src/generated` is not in git. `scripts/generate.ts` writes it from the codegen files and the

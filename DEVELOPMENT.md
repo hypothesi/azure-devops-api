@@ -2,9 +2,9 @@
 
 ```sh
 npm install
-npx playwright install chromium firefox webkit
+npx playwright install chromium
 npm run standards   # generate, format, lint, type check, build, and check package exports
-npm test            # every workspace, with the client in Node.js, Chromium, Firefox, and WebKit
+npm test            # every workspace, with the client in Node.js and Chromium
 npx fallow          # dead code, duplication, complexity, and import boundaries
 npx changeset       # describe a change for the next release
 ```

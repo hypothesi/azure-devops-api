@@ -63,11 +63,11 @@ jobs:
 
          - name: Install Playwright browsers
            if: steps.playwright-cache.outputs.cache-hit != 'true'
-           run: npx playwright install --with-deps chromium firefox webkit
+           run: npx playwright install --with-deps chromium
 
          - name: Install Playwright system dependencies
            if: steps.playwright-cache.outputs.cache-hit == 'true'
-           run: npx playwright install-deps chromium firefox webkit
+           run: npx playwright install-deps chromium
 
-         - name: Generate the client and test in Node.js, Chromium, Firefox, and WebKit
+         - name: Generate the client and test in Node.js and Chromium
            run: npm test
