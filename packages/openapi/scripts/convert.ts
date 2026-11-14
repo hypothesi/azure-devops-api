@@ -16,6 +16,7 @@ import {
    addArea,
    fixFormatTypes,
    matchPathParameterCase,
+   makeWiqlTeamOptional,
    markStreamsAsBinary,
    unwrapArrayAllOf,
    listOperations,
@@ -145,7 +146,9 @@ function writeArea(apiVersion: string, area: string, document: JsonObject): void
    writeJson(
       path.join(DIST_DIR, 'codegen', apiVersion, `${area}.json`),
       allowNullInOptionalProperties(
-         markStreamsAsBinary(openObjectSchemas(removeApiVersionParameter(moveMsPathsIntoPaths(document)))),
+         markStreamsAsBinary(
+            openObjectSchemas(makeWiqlTeamOptional(removeApiVersionParameter(moveMsPathsIntoPaths(document)))),
+         ),
       ),
    );
 }

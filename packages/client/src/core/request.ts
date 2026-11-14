@@ -76,7 +76,11 @@ export function createOperationClient(context: ClientContext): OperationClient {
          {
             method: config.method,
             operation: `${config.method} ${config.url}`,
-            path: fillPath(pathTemplate, config.path ?? {}),
+            path: fillPath(
+               pathTemplate,
+               config.path ?? {},
+               context.table.operations[`${config.method} ${config.url}`]?.[2],
+            ),
             query: { ...getTemplateQuery(queryTemplate), ...toQueryParams(config.query ?? {}) },
             body: getBody(config.body, contentType),
             headers: toHeaders(config.headers ?? {}),
@@ -89,16 +93,27 @@ export function createOperationClient(context: ClientContext): OperationClient {
    };
 }
 
-/** Splits a path template into segments and replaces each `{name}` with its value. */
-function fillPath(template: string, values: Readonly<Record<string, unknown>>): string[] {
+/**
+ * Splits a path template into segments and replaces each `{name}` with its value. It leaves
+ * out a `{name}` segment when `name` is in `optional` and has no value.
+ */
+function fillPath(
+   template: string,
+   values: Readonly<Record<string, unknown>>,
+   optional: readonly string[] = [],
+): string[] {
    return template
       .split('/')
-      .filter(Boolean)
+      .filter((segment) => {
+         const name = /^\{([^}]+)\}$/.exec(segment)?.[1];
+
+         return segment !== '' && !(name !== undefined && optional.includes(name) && isMissing(values[name]));
+      })
       .map((segment) => {
          return segment.replaceAll(/\{([^}]+)\}/g, (_match, name: string) => {
             const value = toParameterValue(values[name]);
 
-            if (value === undefined || value === '') {
+            if (isMissing(value)) {
                throw new InvalidInputError(`path.${name} is required`);
             }
 
@@ -125,6 +140,12 @@ function toQueryParams(query: Readonly<Record<string, unknown>>): QueryParams {
          return [key, toParameterValue(value)];
       }),
    );
+}
+
+function isMissing(value: unknown): boolean {
+   const parameterValue = toParameterValue(value);
+
+   return parameterValue === undefined || parameterValue === '';
 }
 
 function toParameterValue(value: unknown): string | number | boolean | undefined {

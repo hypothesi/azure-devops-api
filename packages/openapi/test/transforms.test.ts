@@ -6,6 +6,7 @@ import {
    allowNullInOptionalProperties,
    fixFormatTypes,
    matchPathParameterCase,
+   makeWiqlTeamOptional,
    markStreamsAsBinary,
    unwrapArrayAllOf,
    moveMsPathsIntoPaths,
@@ -438,6 +439,23 @@ describe('unwrapArrayAllOf', () => {
 describe('markStreamsAsBinary', () => {
    it('changes format Stream to binary', () => {
       expect(markStreamsAsBinary({ type: 'string', format: 'Stream' })).toEqual({ type: 'string', format: 'binary' });
+   });
+});
+
+describe('makeWiqlTeamOptional', () => {
+   it('makes team optional in the WIQL paths only', () => {
+      const team = { name: 'team', in: 'path', required: true },
+         result = makeWiqlTeamOptional({
+            paths: {
+               '/{project}/{team}/_apis/wit/wiql/{id}': { get: { parameters: [{ ...team }] } },
+               '/{project}/{team}/_apis/wit/templates': { get: { parameters: [{ ...team }] } },
+            },
+         });
+
+      expect(result.paths).toEqual({
+         '/{project}/{team}/_apis/wit/wiql/{id}': { get: { parameters: [{ ...team, required: false }] } },
+         '/{project}/{team}/_apis/wit/templates': { get: { parameters: [team] } },
+      });
    });
 });
 

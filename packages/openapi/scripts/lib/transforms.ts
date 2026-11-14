@@ -8,7 +8,8 @@ const BOM = String.fromCodePoint(0xfe_ff),
    ORGANIZATION_PREFIX = '/{organization}',
    PARAMETER_REF_PREFIX = '#/components/parameters/',
    API_VERSION_COMPONENT_PREFIX = 'api-Version',
-   API_VERSION_DESCRIPTION = /set to '([^']+)'/;
+   API_VERSION_DESCRIPTION = /set to '([^']+)'/,
+   WIQL_PATH = '/{project}/{team}/_apis/wit/wiql';
 
 export interface Operation {
    readonly pathKey: string;
@@ -587,6 +588,28 @@ export function markStreamsAsBinary(document: JsonObject): JsonObject {
          node.format = 'binary';
       }
    });
+
+   return result;
+}
+
+/**
+ * For codegen. The specs mark `team` as required in the WIQL paths, but Azure DevOps also
+ * runs a query sent without the `{team}` segment. `required: false` makes Kubb type `team` as
+ * optional, and the client leaves out the segment when `team` is not set.
+ */
+export function makeWiqlTeamOptional(document: JsonObject): JsonObject {
+   const result = structuredClone(document);
+
+   for (const { pathKey, operation } of listOperations(result)) {
+      const parameters =
+         pathKey.startsWith(WIQL_PATH) && Array.isArray(operation.parameters) ? operation.parameters : [];
+
+      for (const parameter of parameters) {
+         if (isJsonObject(parameter) && parameter.in === 'path' && parameter.name === 'team') {
+            parameter.required = false;
+         }
+      }
+   }
 
    return result;
 }
