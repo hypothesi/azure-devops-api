@@ -89,11 +89,11 @@
    },
    "devDependencies": {
       "@hypothesi/azure-devops-openapi": "*",
-      "@kubb/adapter-oas": "5.15.3",
-      "@kubb/plugin-client": "5.9.0",
-      "@kubb/plugin-ts": "5.4.0",
-      "@kubb/plugin-zod": "5.8.0",
-      "kubb": "5.15.3",
+      "@kubb/adapter-oas": "5.18.5",
+      "@kubb/plugin-client": "5.11.1",
+      "@kubb/plugin-ts": "5.4.2",
+      "@kubb/plugin-zod": "5.8.3",
+      "kubb": "5.18.5",
       "zod": "4.6.7"
    },
    "peerDependencies": {
