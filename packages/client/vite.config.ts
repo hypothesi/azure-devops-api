@@ -38,7 +38,6 @@ export default defineConfig({
       dts: true,
       format: ['esm', 'cjs'],
       platform: 'neutral',
-      sourcemap: true,
       publint: { level: 'error', strict: true },
       attw: { level: 'error', profile: 'strict' },
    },
