@@ -15,8 +15,13 @@ export interface OperationTable {
    readonly apiVersion: string;
    /** Server URLs, such as `https://feeds.dev.azure.com/{organization}`. */
    readonly servers: readonly string[];
-   /** Keyed by `${method} ${urlTemplate}`. Each value is the `api-version` and an index into `servers`. */
-   readonly operations: Readonly<Record<string, readonly [apiVersion: string, server: number]>>;
+   /**
+    * Keyed by `${method} ${urlTemplate}`. Each value is the `api-version`, an index into
+    * `servers`, and the names of the optional path parameters, if there are any.
+    */
+   readonly operations: Readonly<
+      Record<string, readonly [apiVersion: string, server: number, optionalPath?: readonly string[]]>
+   >;
 }
 
 /** Internal state that the API classes share. */

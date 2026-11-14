@@ -147,6 +147,18 @@ describe('buildOperationTable', () => {
       ]);
    });
 
+   it('lists the optional path parameters of an operation', () => {
+      const parameters = [
+            { name: 'project', in: 'path', required: true },
+            { name: 'team', in: 'path', required: false },
+            { name: '$top', in: 'query', required: false },
+         ],
+         spec = createSpec({ '/{project}/{team}/wiql': { post: { 'x-ado-api-version': '7.1', parameters } } }),
+         table = buildOperationTable('7.1', [{ module: WIT, spec }]);
+
+      expect([...table.operations]).toEqual([['POST /{project}/{team}/wiql', ['7.1', 0, ['team']]]]);
+   });
+
    it('accepts one operation in two areas with the same version and server', () => {
       const paths = { '/shared': { get: { 'x-ado-api-version': '7.1' } } },
          table = buildOperationTable('7.1', [

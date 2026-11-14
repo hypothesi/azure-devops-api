@@ -2,6 +2,7 @@ import type { Manifest } from '@hypothesi/azure-devops-openapi/manifest';
 
 interface OpenAPIOperation {
    readonly 'x-ado-api-version'?: string;
+   readonly parameters?: readonly { readonly name?: string; readonly in?: string; readonly required?: boolean }[];
 }
 
 // A type alias, not an interface, so it is assignable to Kubb's `Record<string, unknown>` input.
@@ -22,10 +23,13 @@ interface AreaSpec {
    readonly spec: OpenAPIDocument;
 }
 
-/** Each operation's `[apiVersion, serverIndex]`, keyed by `METHOD urlTemplate`. */
+/**
+ * Each operation's `[apiVersion, serverIndex]`, keyed by `METHOD urlTemplate`. An operation
+ * with optional path parameters has their names as a third item.
+ */
 interface OperationTable {
    readonly servers: string[];
-   readonly operations: Map<string, readonly [string, number]>;
+   readonly operations: Map<string, readonly [string, number] | readonly [string, number, readonly string[]]>;
 }
 
 interface PathItemContext {
@@ -134,7 +138,20 @@ function addOperation(table: OperationTable, key: string, operation: OpenAPIOper
       throw new Error(`${context.apiVersion}: ${key} is in two areas with different API versions or servers`);
    }
 
-   table.operations.set(key, [operationVersion, context.serverIndex]);
+   const optionalPath = (operation.parameters ?? [])
+      .filter((parameter) => {
+         return parameter.in === 'path' && parameter.required === false;
+      })
+      .map((parameter) => {
+         return String(parameter.name);
+      });
+
+   table.operations.set(
+      key,
+      optionalPath.length > 0
+         ? [operationVersion, context.serverIndex, optionalPath]
+         : [operationVersion, context.serverIndex],
+   );
 }
 
 function addPathItem(table: OperationTable, pathItem: Record<string, unknown>, context: PathItemContext): void {

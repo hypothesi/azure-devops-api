@@ -93,6 +93,24 @@ describe('generated operations', () => {
       expect(url.searchParams.get('$depth')).toBe('2');
    });
 
+   it('leaves out an optional path segment that has no value', async () => {
+      const { client, requests } = createFakeClient([respondJSON({ workItems: [] }), respondJSON({ workItems: [] })]);
+
+      await v71.wit.wiqlQueryByWiql({
+         client,
+         path: { project: 'Web' },
+         body: { query: 'SELECT [System.Id] FROM workitems' },
+      });
+      await v71.wit.wiqlQueryByWiql({
+         client,
+         path: { project: 'Web', team: 'Web Team' },
+         body: { query: 'SELECT 1' },
+      });
+
+      expect(new URL(getRequest(requests, 0).url).pathname).toBe('/contoso/Web/_apis/wit/wiql');
+      expect(new URL(getRequest(requests, 1).url).pathname).toBe('/contoso/Web/Web%20Team/_apis/wit/wiql');
+   });
+
    it('sends a JSON Patch body with the JSON Patch content type', async () => {
       const { client, requests } = createFakeClient([respondJSON({ id: 7 })]);
 
