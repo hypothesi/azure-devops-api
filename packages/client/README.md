@@ -230,6 +230,119 @@ const { data } = await ado.request({
 The client percent-encodes each path segment. It sends credentials only to the organization
 URL, the search URL, and the hosts of the generated operations.
 
+## Examples
+
+Each example uses the `ado` client from the [quick start](#quick-start).
+
+### List open pull requests and their approvals
+
+A reviewer vote of `10` is "approved" and `5` is "approved with suggestions":
+
+```ts
+import { git } from '@hypothesi/azure-devops-api/services';
+
+const { data: pullRequests } = await git.pullRequestsGetPullRequests({
+   client: ado,
+   path: { project: 'Web', repositoryId: 'web-app' },
+   query: { 'searchCriteria.status': 'active', 'searchCriteria.targetRefName': 'refs/heads/main' },
+});
+
+for (const pr of pullRequests) {
+   const approvals = (pr.reviewers ?? []).filter((reviewer) => {
+      return (reviewer.vote ?? 0) >= 5;
+   });
+
+   console.log(`!${pr.pullRequestId} ${pr.title} by ${pr.createdBy?.displayName}: ${approvals.length} approvals`);
+}
+```
+
+### Post a comment on a pull request from CI
+
+A thread with `status: 'closed'` shows the comment without asking the author to resolve it:
+
+```ts
+await git.pullRequestThreadsCreate({
+   client: ado,
+   path: { project: 'Web', repositoryId: 'web-app', pullRequestId: 123 },
+   body: {
+      comments: [{ content: 'Bundle size: **412 kB** (+3 kB)', commentType: 'text' }],
+      status: 'closed',
+   },
+});
+```
+
+### Queue the builds that failed on main in the last day
+
+```ts
+import { build } from '@hypothesi/azure-devops-api/services';
+
+const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+
+const { data: failedBuilds } = await build.buildsList({
+   client: ado,
+   path: { project: 'Web' },
+   query: {
+      branchName: 'refs/heads/main',
+      resultFilter: 'failed',
+      minTime: new Date(Date.now() - ONE_DAY_MS).toISOString(),
+   },
+});
+
+const retries = await Promise.all(
+   failedBuilds.map((failed) => {
+      return build.buildsQueue({
+         client: ado,
+         path: { project: 'Web' },
+         body: { definition: failed.definition ?? null, sourceBranch: failed.sourceBranch ?? null },
+      });
+   }),
+);
+```
+
+### Count the work items of the current sprint by state
+
+```ts
+import { work } from '@hypothesi/azure-devops-api/services';
+
+const sprint = await ado.work.getCurrentIteration('Web', 'Web Team');
+
+const { data: iteration } = await work.iterationsGetIterationWorkItems({
+   client: ado,
+   path: { project: 'Web', team: 'Web Team', iterationId: sprint?.id ?? '' },
+});
+
+const ids = (iteration.workItemRelations ?? []).flatMap((relation) => {
+   const id = relation.target?.id;
+
+   return typeof id === 'number' ? [id] : [];
+});
+
+const workItems = await ado.workItems.list(ids, { fields: ['System.State'] }),
+   byState = Map.groupBy(workItems, (item) => {
+      return String(item.fields?.['System.State']);
+   });
+
+for (const [state, items] of byState) {
+   console.log(`${state}: ${items.length}`);
+}
+```
+
+### Handle a work item that does not exist
+
+```ts
+import { NotFoundError } from '@hypothesi/azure-devops-api/services';
+
+try {
+   await ado.workItems.get(999_999);
+} catch (error) {
+   if (error instanceof NotFoundError) {
+      console.log('Work item 999999 does not exist');
+   } else {
+      throw error;
+   }
+}
+```
+
 ## Errors
 
 Every error extends `AzureDevOpsError`, except an abort: an aborted call rejects with the
