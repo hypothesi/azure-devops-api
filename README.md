@@ -11,15 +11,18 @@ npm install @hypothesi/azure-devops-api zod
 import { build, createClient, git } from '@hypothesi/azure-devops-api/services';
 
 const ado = createClient({
-   organization: 'contoso',
+   organization: 'acme',
    auth: { type: 'pat', token: process.env.AZURE_DEVOPS_PAT ?? '' },
 });
 
 // Run a WIQL query and get the matching work items.
-const myBugs = await ado.workItems.queryWorkItems(
-   "SELECT [System.Id] FROM workitems WHERE [System.WorkItemType] = 'Bug' AND [System.AssignedTo] = @Me",
-   { project: 'Web' },
-);
+const wiql = [
+   'SELECT [System.Id] FROM workitems',
+   "WHERE [System.WorkItemType] = 'Bug'",
+   'AND [System.AssignedTo] = @Me',
+].join(' ');
+
+const myBugs = await ado.workItems.queryWorkItems(wiql, { project: 'Web' });
 
 // File a bug with Markdown repro steps.
 const bug = await ado.workItems.create({
@@ -36,7 +39,10 @@ const bug = await ado.workItems.create({
 const { data: pullRequests } = await git.pullRequestsGetPullRequests({
    client: ado,
    path: { project: 'Web', repositoryId: 'web-app' },
-   query: { 'searchCriteria.status': 'active', 'searchCriteria.targetRefName': 'refs/heads/main' },
+   query: {
+      'searchCriteria.status': 'active',
+      'searchCriteria.targetRefName': 'refs/heads/main',
+   },
 });
 
 // Find the builds that failed on main.

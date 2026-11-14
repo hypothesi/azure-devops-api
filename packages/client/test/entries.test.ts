@@ -65,7 +65,7 @@ describe('generated operations', () => {
       const url = new URL(getRequest(requests, 0).url);
 
       expect(data.text).toBe('hi');
-      expect(url.pathname).toBe('/contoso/Web/_apis/wit/workItems/7/comments/1');
+      expect(url.pathname).toBe('/acme/Web/_apis/wit/workItems/7/comments/1');
       expect(url.searchParams.get('api-version')).toBe('7.1-preview.4');
    });
 
@@ -88,7 +88,7 @@ describe('generated operations', () => {
 
       const url = new URL(getRequest(requests, 0).url);
 
-      expect(url.pathname).toBe('/contoso/My%20Project/_apis/wit/classificationnodes');
+      expect(url.pathname).toBe('/acme/My%20Project/_apis/wit/classificationnodes');
       expect(url.searchParams.get('ids')).toBe('1,2');
       expect(url.searchParams.get('$depth')).toBe('2');
    });
@@ -107,8 +107,8 @@ describe('generated operations', () => {
          body: { query: 'SELECT 1' },
       });
 
-      expect(new URL(getRequest(requests, 0).url).pathname).toBe('/contoso/Web/_apis/wit/wiql');
-      expect(new URL(getRequest(requests, 1).url).pathname).toBe('/contoso/Web/Web%20Team/_apis/wit/wiql');
+      expect(new URL(getRequest(requests, 0).url).pathname).toBe('/acme/Web/_apis/wit/wiql');
+      expect(new URL(getRequest(requests, 1).url).pathname).toBe('/acme/Web/Web%20Team/_apis/wit/wiql');
    });
 
    it('sends a JSON Patch body with the JSON Patch content type', async () => {
@@ -136,7 +136,7 @@ describe('generated operations', () => {
    });
 
    it.each([
-      ['contoso', 'https://feeds.dev.azure.com/contoso/Web/_apis/packaging/feeds'],
+      ['acme', 'https://feeds.dev.azure.com/acme/Web/_apis/packaging/feeds'],
       [
          'https://tfs.example.com/DefaultCollection',
          'https://tfs.example.com/DefaultCollection/Web/_apis/packaging/feeds',

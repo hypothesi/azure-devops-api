@@ -7,7 +7,7 @@ const WORK_ITEM = {
       id: 7,
       rev: 3,
       fields: { 'System.Title': 'Fix login' },
-      url: 'https://dev.azure.com/contoso/_apis/wit/workItems/7',
+      url: 'https://dev.azure.com/acme/_apis/wit/workItems/7',
    },
    respondWorkItem = respondJSON(WORK_ITEM);
 
@@ -43,7 +43,7 @@ describe('WorkItems', () => {
          const url = new URL(getRequest(requests, 0).url);
 
          expect(workItem.fields?.['System.Title']).toBe('Fix login');
-         expect(url.pathname).toBe('/contoso/_apis/wit/workitems/7');
+         expect(url.pathname).toBe('/acme/_apis/wit/workitems/7');
          expect(url.searchParams.get('fields')).toBe('System.Title,System.State');
          expect(url.searchParams.get('asOf')).toBe('2026-01-02T03:04:05.000Z');
       });
@@ -115,7 +115,7 @@ describe('WorkItems', () => {
             url = new URL(request.url);
 
          expect(request.method).toBe('POST');
-         expect(url.pathname).toBe('/contoso/Web/_apis/wit/workitems/$User%20Story');
+         expect(url.pathname).toBe('/acme/Web/_apis/wit/workitems/$User%20Story');
          expect(url.searchParams.get('validateOnly')).toBe('true');
          expect(request.headers.get('Content-Type')).toBe('application/json-patch+json');
          expect(await readJSON(request)).toEqual([
@@ -127,7 +127,7 @@ describe('WorkItems', () => {
                path: '/relations/-',
                value: {
                   rel: 'System.LinkTypes.Hierarchy-Reverse',
-                  url: 'https://dev.azure.com/contoso/_apis/wit/workItems/5',
+                  url: 'https://dev.azure.com/acme/_apis/wit/workItems/5',
                   attributes: { comment: 'parent' },
                },
             },
@@ -184,7 +184,7 @@ describe('WorkItems', () => {
                return workItem.id;
             }),
          ).toEqual([9, 4]);
-         expect(new URL(getRequest(requests, 0).url).pathname).toBe('/contoso/Web/_apis/wit/wiql');
+         expect(new URL(getRequest(requests, 0).url).pathname).toBe('/acme/Web/_apis/wit/wiql');
          expect(await readJSON(getRequest(requests, 1))).toMatchObject({ ids: [9, 4], fields: ['System.Title'] });
       });
 

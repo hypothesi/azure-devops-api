@@ -31,7 +31,7 @@ describe('addCodeSamples', () => {
                source: [
                   "import { createClient, wit } from '@hypothesi/azure-devops-api/7.1';",
                   '',
-                  "const ado = createClient({ organization: 'contoso', auth: { type: 'pat', token: process.env.AZURE_DEVOPS_PAT ?? '' } });",
+                  "const ado = createClient({ organization: 'acme', auth: { type: 'pat', token: process.env.AZURE_DEVOPS_PAT ?? '' } });",
                   '',
                   "const result = await wit.workItemsGetWorkItem({ client: ado, path: { project: 'project', id: 1 } });",
                ].join('\n'),

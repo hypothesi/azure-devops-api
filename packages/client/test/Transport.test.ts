@@ -37,7 +37,7 @@ describe('Transport', () => {
          const request = getRequest(requests, 0);
 
          expect(result.data).toEqual({ name: 'ok' });
-         expect(request.url).toBe('https://dev.azure.com/contoso/Web/_apis/thing?api-version=7.1');
+         expect(request.url).toBe('https://dev.azure.com/acme/Web/_apis/thing?api-version=7.1');
          expect(request.headers.get('Authorization')).toBe(`Basic ${btoa(':secret')}`);
          expect(request.headers.get('Accept')).toBe('application/json');
          expect(request.headers.get('X-TFS-FedAuthRedirect')).toBe('Suppress');

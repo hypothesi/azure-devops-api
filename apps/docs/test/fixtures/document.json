@@ -2,7 +2,7 @@
    "openapi": "3.2.0",
    "info": { "title": "Azure DevOps", "version": "7.1" },
    "servers": [
-      { "url": "https://dev.azure.com/{organization}", "variables": { "organization": { "default": "contoso" } } }
+      { "url": "https://dev.azure.com/{organization}", "variables": { "organization": { "default": "acme" } } }
    ],
    "paths": {
       "/{project}/_apis/wit/workitems/{id}": {

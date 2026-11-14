@@ -23,8 +23,8 @@ export type AzureDevOpsAuth =
 
 export interface AzureDevOpsClientOptions {
    /**
-    * The organization name, such as `contoso`, or the full organization or collection URL,
-    * such as `https://dev.azure.com/contoso` or `https://tfs.example.com/DefaultCollection`.
+    * The organization name, such as `acme`, or the full organization or collection URL,
+    * such as `https://dev.azure.com/acme` or `https://tfs.example.com/DefaultCollection`.
     */
    readonly organization: string;
    readonly auth: AzureDevOpsAuth;

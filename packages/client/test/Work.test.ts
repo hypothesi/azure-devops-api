@@ -10,7 +10,7 @@ describe('Work', () => {
       const url = new URL(getRequest(requests, 0).url);
 
       expect(iteration).toBeUndefined();
-      expect(url.pathname).toBe('/contoso/Web/Team%20A/_apis/work/teamsettings/iterations');
+      expect(url.pathname).toBe('/acme/Web/Team%20A/_apis/work/teamsettings/iterations');
       expect(url.searchParams.get('$timeframe')).toBe('current');
    });
 });

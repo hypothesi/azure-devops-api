@@ -119,7 +119,7 @@ function buildCodeSample(
       source: [
          `import { createClient, ${area} } from '${CLIENT_PACKAGE}/${apiVersion}';`,
          '',
-         "const ado = createClient({ organization: 'contoso', auth: { type: 'pat', token: process.env.AZURE_DEVOPS_PAT ?? '' } });",
+         "const ado = createClient({ organization: 'acme', auth: { type: 'pat', token: process.env.AZURE_DEVOPS_PAT ?? '' } });",
          '',
          `const result = await ${area}.${toFunctionName(operation.operationId)}({ ${options.join(', ')} });`,
       ].join('\n'),

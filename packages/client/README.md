@@ -55,7 +55,7 @@ that every entry point shares. Every entry point exports them too.
 import { createClient, wit } from '@hypothesi/azure-devops-api/services';
 
 const ado = createClient({
-   organization: 'contoso',
+   organization: 'acme',
    auth: { type: 'pat', token: process.env.AZURE_DEVOPS_PAT ?? '' },
 });
 
@@ -68,7 +68,7 @@ const { data: workItem } = await wit.workItemsGetWorkItem({
 console.log(workItem.fields?.['System.Title']);
 ```
 
-`organization` accepts an organization name (`contoso`) or a full URL. Use a full URL for
+`organization` accepts an organization name (`acme`) or a full URL. Use a full URL for
 Azure DevOps Server, for example `https://tfs.example.com/DefaultCollection`.
 
 ## Generated operations
@@ -84,7 +84,7 @@ headers }`. On failure it throws one of the [errors](#errors).
 ```ts
 import { core, createClient, git, wit } from '@hypothesi/azure-devops-api/7.1';
 
-const ado = createClient({ organization: 'contoso', auth: { type: 'pat', token: myPAT } });
+const ado = createClient({ organization: 'acme', auth: { type: 'pat', token: myPAT } });
 
 // The client sends the api-version of each operation. For this operation it is 7.1-preview.4.
 const { data: comment } = await wit.commentsGetComment({
@@ -111,7 +111,7 @@ A personal access token:
 
 ```ts
 const ado = createClient({
-   organization: 'contoso',
+   organization: 'acme',
    auth: { type: 'pat', token: myPAT },
 });
 ```
@@ -127,7 +127,7 @@ const credential = new DefaultAzureCredential(),
    scope = '499b84ac-1321-427f-aa17-267ca6975798/.default';
 
 const ado = createClient({
-   organization: 'contoso',
+   organization: 'acme',
    auth: {
       type: 'bearer',
       token: async () => {
@@ -385,7 +385,7 @@ async function findWorkItem(id: number): Promise<wit.WorkItem | undefined> {
 
 ```ts
 const ado = createClient({
-   organization: 'contoso',
+   organization: 'acme',
    auth: { type: 'pat', token: myPAT },
    timeoutMs: 30_000, // per attempt, including the response body
    retry: { maxRetries: 3, baseDelayMs: 500, maxDelayMs: 30_000 },

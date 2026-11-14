@@ -38,7 +38,7 @@ export function createFakeClient(
 ): FakeClient {
    const { fetch, requests } = createFakeFetch(responders),
       client = create({
-         organization: 'contoso',
+         organization: 'acme',
          auth: { type: 'pat', token: 'secret' },
          retry: { baseDelayMs: 1, maxDelayMs: 50 },
          fetch,

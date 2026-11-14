@@ -23,7 +23,7 @@ describe('createClient', () => {
 
          await client.projects.get('Web');
 
-         expect(getRequest(requests, 0).url).toBe('https://dev.azure.com/contoso/_apis/projects/Web?api-version=7.1');
+         expect(getRequest(requests, 0).url).toBe('https://dev.azure.com/acme/_apis/projects/Web?api-version=7.1');
       });
 
       it('accepts a full collection URL with a trailing slash', async () => {
@@ -42,7 +42,7 @@ describe('createClient', () => {
 
       it.each([
          ['an empty name', { organization: ' ' }],
-         ['a path without a scheme', { organization: 'dev.azure.com/contoso' }],
+         ['a path without a scheme', { organization: 'dev.azure.com/acme' }],
          ['an invalid URL', { organization: 'https://' }],
          ['a non-HTTP URL', { organization: 'ftp://example.com/x' }],
          ['an empty PAT', { auth: { type: 'pat', token: '' } }],
@@ -51,7 +51,7 @@ describe('createClient', () => {
       ] as const)('throws InvalidInputError for %s', (_name, options) => {
          expect(() => {
             return createClient({
-               organization: 'contoso',
+               organization: 'acme',
                auth: { type: 'pat', token: 'secret' },
                ...options,
             });
@@ -63,7 +63,7 @@ describe('createClient', () => {
       it('uses almsearch.dev.azure.com for dev.azure.com organizations', async () => {
          const url = await getSearchURL({});
 
-         expect(url).toBe('https://almsearch.dev.azure.com/contoso/_apis/search/workitemsearchresults');
+         expect(url).toBe('https://almsearch.dev.azure.com/acme/_apis/search/workitemsearchresults');
       });
 
       it('uses the organization URL for servers', async () => {
@@ -73,9 +73,9 @@ describe('createClient', () => {
       });
 
       it('uses the searchURL option when it is set', async () => {
-         const url = await getSearchURL({ searchURL: 'https://search.example.com/contoso' });
+         const url = await getSearchURL({ searchURL: 'https://search.example.com/acme' });
 
-         expect(url).toBe('https://search.example.com/contoso/_apis/search/workitemsearchresults');
+         expect(url).toBe('https://search.example.com/acme/_apis/search/workitemsearchresults');
       });
    });
 
@@ -101,7 +101,7 @@ describe('createClient', () => {
       await client.request({ path: ['My Project', '_apis', 'git', 'repositories', 'a/b'], schema: z.unknown() });
 
       expect(getRequest(requests, 0).url).toBe(
-         'https://dev.azure.com/contoso/My%20Project/_apis/git/repositories/a%2Fb?api-version=7.1',
+         'https://dev.azure.com/acme/My%20Project/_apis/git/repositories/a%2Fb?api-version=7.1',
       );
    });
 });

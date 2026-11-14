@@ -32,7 +32,7 @@
          </p>
          <pre><code>import { createClient, wit } from '@hypothesi/azure-devops-api/services';
 
-const ado = createClient({ organization: 'contoso', auth: { type: 'pat', token: process.env.AZURE_DEVOPS_PAT ?? '' } });
+const ado = createClient({ organization: 'acme', auth: { type: 'pat', token: process.env.AZURE_DEVOPS_PAT ?? '' } });
 
 const workItem = await wit.workItemsGetWorkItem({ client: ado, path: { project: 'Web', id: 42 } });</code></pre>
       </main>
