@@ -152,10 +152,13 @@ lists, and follow continuation tokens.
 const workItems = await ado.workItems.list([1, 2, 3], { fields: ['System.Title', 'System.State'] });
 
 // Run a WIQL query and get the matching work items.
-const mine = await ado.workItems.queryWorkItems(
-   "SELECT [System.Id] FROM workitems WHERE [System.AssignedTo] = @Me AND [System.State] <> 'Closed'",
-   { project: 'Web' },
-);
+const wiql = [
+   'SELECT [System.Id] FROM workitems',
+   'WHERE [System.AssignedTo] = @Me',
+   "AND [System.State] <> 'Closed'",
+].join(' ');
+
+const mine = await ado.workItems.queryWorkItems(wiql, { project: 'Web' });
 
 // Create a bug with Markdown repro steps and a parent.
 const bug = await ado.workItems.create({
@@ -234,6 +237,29 @@ URL, the search URL, and the hosts of the generated operations.
 
 Each example uses the `ado` client from the [quick start](#quick-start).
 
+### List the work items assigned to you
+
+Without `project`, the query covers every project in the organization:
+
+```ts
+const wiql = [
+   'SELECT [System.Id] FROM workitems',
+   'WHERE [System.AssignedTo] = @Me',
+   "AND [System.State] NOT IN ('Closed', 'Done', 'Removed')",
+   'ORDER BY [System.ChangedDate] DESC',
+].join(' ');
+
+const assigned = await ado.workItems.queryWorkItems(wiql, {
+   fields: ['System.TeamProject', 'System.WorkItemType', 'System.Title', 'System.State'],
+});
+
+for (const item of assigned) {
+   const fields = item.fields ?? {};
+
+   console.log(item.id, fields['System.TeamProject'], fields['System.WorkItemType'], fields['System.Title']);
+}
+```
+
 ### List open pull requests and their approvals
 
 A reviewer vote of `10` is "approved" and `5` is "approved with suggestions":
@@ -244,7 +270,10 @@ import { git } from '@hypothesi/azure-devops-api/services';
 const { data: pullRequests } = await git.pullRequestsGetPullRequests({
    client: ado,
    path: { project: 'Web', repositoryId: 'web-app' },
-   query: { 'searchCriteria.status': 'active', 'searchCriteria.targetRefName': 'refs/heads/main' },
+   query: {
+      'searchCriteria.status': 'active',
+      'searchCriteria.targetRefName': 'refs/heads/main',
+   },
 });
 
 for (const pr of pullRequests) {
