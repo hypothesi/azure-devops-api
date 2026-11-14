@@ -11,4 +11,5 @@ npx changeset       # describe a change for the next release
 
 [docs/architecture.md](docs/architecture.md) describes the workspaces and the import rules
 between them. The [client README](packages/client/README.md#development) describes how
-`src/generated` is built.
+`src/generated` is built. [RELEASING.md](RELEASING.md) describes how to publish a new
+version.
