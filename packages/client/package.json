@@ -1,6 +1,6 @@
 {
    "name": "@hypothesi/azure-devops-api",
-   "version": "0.1.0",
+   "version": "0.1.1",
    "description": "Type-safe Azure DevOps REST API client for browsers and Node.js, with Zod-validated responses, timeouts, and retries",
    "keywords": [
       "ado",
