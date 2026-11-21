@@ -47,8 +47,8 @@
       "test:node": "vp test run --project node"
    },
    "devDependencies": {
-      "@redocly/cli": "2.75.0",
-      "@scalar/openapi-upgrader": "0.4.6",
+      "@redocly/cli": "2.79.0",
+      "@scalar/openapi-upgrader": "0.4.11",
       "zod": "4.6.7"
    },
    "peerDependencies": {
